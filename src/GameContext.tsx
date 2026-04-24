@@ -13,7 +13,9 @@ import { playSound } from "./engine/sound";
 import {
   load, Profile, recordResult, saveActiveGame, Settings, Store, updateSettings,
   createProfile, deleteProfile, renameProfile,
-  loadActiveSession, saveActiveSession, clearActiveSession
+  loadActiveSession, saveActiveSession, clearActiveSession,
+  recordPuzzleSolved as storeRecordPuzzleSolved,
+  recordPuzzleAttempt as storeRecordPuzzleAttempt
 } from "./engine/storage";
 
 type Mode = { kind: "two-player" } | { kind: "bot"; level: number };
@@ -42,6 +44,8 @@ interface GameCtx {
 
   // puzzles
   loadPosition(state: GameState, players?: Partial<Players>, opts?: { noTimer?: boolean }): void;
+  recordPuzzleSolved(puzzleId: string): void;
+  recordPuzzleAttempt(puzzleId: string): void;
 
   // hint
   hint: Move | null;
@@ -397,11 +401,28 @@ export function GameProvider({ children }: { children: ReactNode }) {
     storeRef.current = updated;
   }, [store]);
 
+  const recordPuzzleSolved = useCallback((puzzleId: string) => {
+    if (!activeProfile) return;
+    const updated = cloneStore(store);
+    storeRecordPuzzleSolved(updated, activeProfile.id, puzzleId);
+    setStore(updated);
+    storeRef.current = updated;
+  }, [store, activeProfile]);
+
+  const recordPuzzleAttempt = useCallback((puzzleId: string) => {
+    if (!activeProfile) return;
+    const updated = cloneStore(store);
+    storeRecordPuzzleAttempt(updated, activeProfile.id, puzzleId);
+    setStore(updated);
+    storeRef.current = updated;
+  }, [store, activeProfile]);
+
   const value: GameCtx = {
     store, activeProfile, state, mode, players, selected, legalFromSelected, timeLeft, isBotThinking, result,
     paused, togglePause,
     select, tryMove, undo, newGame, forfeit,
     loadPosition,
+    recordPuzzleSolved, recordPuzzleAttempt,
     hint, requestHint, clearHint,
     setActiveProfile, addProfile, removeProfile, renamePlayer, updateSetting
   };

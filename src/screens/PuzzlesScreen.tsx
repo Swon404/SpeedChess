@@ -6,7 +6,6 @@ import {
   PUZZLES, filterPuzzles, puzzleDifficulty,
   type Puzzle, type Difficulty
 } from "../puzzles/puzzles";
-import { recordPuzzleAttempt, recordPuzzleSolved } from "../engine/storage";
 import { parseUci } from "../engine/board";
 
 type Status = "solving" | "wrong" | "solved";
@@ -21,7 +20,7 @@ const DIFF_LABEL: Record<Difficulty | "all", string> = {
 };
 
 export function PuzzlesScreen() {
-  const { loadPosition, state, tryMove, store, activeProfile } = useGame();
+  const { loadPosition, state, tryMove, activeProfile, recordPuzzleSolved, recordPuzzleAttempt } = useGame();
   const [difficulty, setDifficulty] = useState<Difficulty | "all">("beginner");
   const [mateIn, setMateIn] = useState<MateFilter>("all");
   const [newOnly, setNewOnly] = useState(true);
@@ -110,7 +109,7 @@ export function PuzzlesScreen() {
     if (!ok) {
       setStatus("wrong");
       if (attemptedRef.current !== puzzle.id) {
-        recordPuzzleAttempt(store, activeProfile?.id ?? null, puzzle.id);
+        recordPuzzleAttempt(puzzle.id);
         attemptedRef.current = puzzle.id;
       }
       return;
@@ -119,7 +118,7 @@ export function PuzzlesScreen() {
     const nextIdx = plyIndex + 1;
     if (nextIdx >= puzzle.moves.length) {
       setStatus("solved");
-      recordPuzzleSolved(store, activeProfile?.id ?? null, puzzle.id);
+      recordPuzzleSolved(puzzle.id);
       setPlayedPlies(moved);
       return;
     }
