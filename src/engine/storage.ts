@@ -1,6 +1,7 @@
 import type { GameState } from "./board";
 
 const KEY = "speedchess.v1";
+const ACTIVE_KEY = "speedchess.v1.active";
 
 export interface Profile {
   id: string;
@@ -171,4 +172,38 @@ export function saveActiveGame(store: Store, profileId: string, game: SavedGame 
 
 export function getLeaderboard(store: Store): Profile[] {
   return store.profiles.slice().sort((a, b) => b.stats.rating - a.stats.rating);
+}
+
+// ---------------------------------------------------------------------------
+// Active session persistence — survives page refresh / PWA relaunch.
+// Stored under a separate key so it's cleared independently of the profile
+// store (e.g. when the game ends).
+// ---------------------------------------------------------------------------
+
+export interface ActiveSession {
+  mode: { kind: "two-player" } | { kind: "bot"; level: number };
+  players: { w: string; b: string };
+  stack: GameState[]; // full history stack, so Undo still works
+  timeLeft: number | null; // null === Infinity (timer off)
+  savedAt: number;
+}
+
+export function loadActiveSession(): ActiveSession | null {
+  try {
+    const raw = localStorage.getItem(ACTIVE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as ActiveSession;
+    if (!parsed || !Array.isArray(parsed.stack) || parsed.stack.length === 0) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function saveActiveSession(s: ActiveSession): void {
+  try { localStorage.setItem(ACTIVE_KEY, JSON.stringify(s)); } catch { /* ignore quota */ }
+}
+
+export function clearActiveSession(): void {
+  try { localStorage.removeItem(ACTIVE_KEY); } catch { /* ignore */ }
 }

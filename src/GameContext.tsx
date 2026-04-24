@@ -12,7 +12,8 @@ import { chooseBotMove } from "./engine/bot";
 import { playSound } from "./engine/sound";
 import {
   load, Profile, recordResult, saveActiveGame, Settings, Store, updateSettings,
-  createProfile, deleteProfile, renameProfile
+  createProfile, deleteProfile, renameProfile,
+  loadActiveSession, saveActiveSession, clearActiveSession
 } from "./engine/storage";
 
 type Mode = { kind: "two-player" } | { kind: "bot"; level: number };
@@ -86,14 +87,24 @@ function reducer(stack: GameState[], action: Action): GameState[] {
 
 export function GameProvider({ children }: { children: ReactNode }) {
   const [store, setStore] = useState<Store>(() => load());
-  const [mode, setMode] = useState<Mode>({ kind: "two-player" });
-  const [players, setPlayers] = useState<Players>({ w: "White", b: "Black" });
-  const [stack, dispatch] = useReducer(reducer, undefined, () => [initialState()]);
+  // Resume any in-progress game from localStorage on first mount.
+  const restored = useMemo(() => loadActiveSession(), []);
+  const [mode, setMode] = useState<Mode>(restored?.mode ?? { kind: "two-player" });
+  const [players, setPlayers] = useState<Players>(restored?.players ?? { w: "White", b: "Black" });
+  const [stack, dispatch] = useReducer(
+    reducer,
+    undefined,
+    () => (restored?.stack && restored.stack.length > 0 ? restored.stack : [initialState()])
+  );
   const state = stack[stack.length - 1];
   const [selected, setSelected] = useState<Square | null>(null);
-  const [timeLeft, setTimeLeft] = useState<number>(
-    store.settings.timerSeconds > 0 ? store.settings.timerSeconds : Infinity
-  );
+  const [timeLeft, setTimeLeft] = useState<number>(() => {
+    if (restored && restored.timeLeft !== null && Number.isFinite(restored.timeLeft)) {
+      return restored.timeLeft as number;
+    }
+    const t = store.settings.timerSeconds;
+    return t > 0 ? t : Infinity;
+  });
   const [isBotThinking, setIsBotThinking] = useState(false);
   const [hint, setHint] = useState<Move | null>(null);
   const stateRef = useRef(state);
@@ -134,10 +145,34 @@ export function GameProvider({ children }: { children: ReactNode }) {
     soundedLenRef.current = state.history.length;
   }, [state, result, mode, store.settings.sound]);
 
-  // Reset timer on each turn change
+  // Persist active session so a refresh / PWA relaunch resumes the game.
+  useEffect(() => {
+    if (result.kind !== "ongoing") {
+      clearActiveSession();
+      return;
+    }
+    saveActiveSession({
+      mode,
+      players,
+      stack,
+      timeLeft: Number.isFinite(timeLeft) ? timeLeft : null,
+      savedAt: Date.now()
+    });
+  }, [stack, mode, players, timeLeft, result.kind]);
+
+  // Reset timer on each turn change (but not on initial mount — we may have
+  // just restored a mid-game timeLeft from localStorage).
+  const lastHistLenRef = useRef<number>(state.history.length);
+  const lastTimerSettingRef = useRef<number>(store.settings.timerSeconds);
   useEffect(() => {
     const t = store.settings.timerSeconds;
-    setTimeLeft(t > 0 ? t : Infinity);
+    const histChanged = state.history.length !== lastHistLenRef.current;
+    const settingChanged = t !== lastTimerSettingRef.current;
+    lastHistLenRef.current = state.history.length;
+    lastTimerSettingRef.current = t;
+    if (histChanged || settingChanged) {
+      setTimeLeft(t > 0 ? t : Infinity);
+    }
   }, [state.history.length, store.settings.timerSeconds]);
 
   // Tick timer
@@ -266,6 +301,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [mode]);
 
   const newGame = useCallback((m: Mode, p?: Partial<Players>) => {
+    clearActiveSession();
     setMode(m);
     const defaultW = activeProfile?.name ?? "White";
     const defaultB = m.kind === "bot" ? `Bot Lv ${m.level}` : "Player 2";

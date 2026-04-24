@@ -256,6 +256,25 @@ section label { display: block; margin: 6px 0; }
 .clock-side.active { border-color: var(--accent); }
 .clock-side strong { font-variant-numeric: tabular-nums; font-size: 1.1rem; }
 .clock-side strong.low { color: #ef4444; animation: check-pulse 900ms ease-in-out infinite; }
+.timer-badge {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.95rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.15);
+  color: var(--text-dim, #cbd5e1);
+  border: 1px solid transparent;
+}
+.timer-badge.idle { opacity: 0.55; }
+.timer-badge.active { background: rgba(250, 204, 21, 0.18); color: #facc15; font-size: 1.1rem; }
+.timer-badge.low { color: #ef4444; background: rgba(239, 68, 68, 0.18); animation: check-pulse 900ms ease-in-out infinite; }
+.timer-badge.off {
+  cursor: pointer;
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px dashed rgba(148, 163, 184, 0.5);
+  color: var(--text-dim, #94a3b8);
+}
+.timer-badge.off:hover { color: var(--accent); border-color: var(--accent); }
 
 .look-picker {
   display: flex;
