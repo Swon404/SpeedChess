@@ -239,7 +239,7 @@ section label { display: block; margin: 6px 0; }
 .piece-set-neon .piece-svg.piece-b { filter: drop-shadow(0 0 6px #ff4fa3) drop-shadow(0 0 14px #ff4fa3); }
 
 .piece-emoji {
-  font-size: min(10vw, 50px);
+  font-size: min(11vw, 60px);
   line-height: 1;
   filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
 }

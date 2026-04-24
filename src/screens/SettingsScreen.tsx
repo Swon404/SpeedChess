@@ -42,7 +42,7 @@ export function SettingsScreen() {
               onClick={() => updateSetting("pieceSet", t)}>{t}</button>
           ))}
         </div>
-        <p className="hint">Classic = Unicode ♚ · Modern = crisp SVG · Neon = glow · Emoji = 🦄 silly mode</p>
+        <p className="hint">Classic = Unicode ♚ · Modern = crisp SVG · Neon = glow · Emoji = ⛏️ Minecraft mode (Steve, Alex, Creepers…)</p>
       </section>
 
       <section>

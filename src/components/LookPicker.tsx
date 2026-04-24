@@ -8,7 +8,7 @@ const THEME_LABEL: Record<BoardTheme, string> = {
   wood: "🪵", blue: "🟦", green: "🟩", neon: "✨"
 };
 const SET_LABEL: Record<PieceSet, string> = {
-  classic: "♚", modern: "♟︎", neon: "💎", emoji: "🦄"
+  classic: "♚", modern: "♟︎", neon: "💎", emoji: "🐉"
 };
 
 export function LookPicker() {

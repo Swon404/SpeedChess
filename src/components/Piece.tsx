@@ -8,8 +8,20 @@ const GLYPH: Record<string, string> = {
 };
 
 const EMOJI: Record<string, string> = {
-  wK: "🤴", wQ: "👸", wR: "🏰", wB: "🧚", wN: "🦄", wP: "🐣",
-  bK: "🦹", bQ: "🧙‍♀️", bR: "🗻", bB: "🧛", bN: "🐲", bP: "🐸"
+  // Minecraft: heroes (white)
+  wK: "👦",    // Steve
+  wQ: "👧",    // Alex
+  wR: "🗿",    // Iron Golem (moai stand-in)
+  wB: "🧙",    // Villager / Wizard
+  wN: "🐺",    // Wolf
+  wP: "🐔",    // Chicken
+  // Minecraft: mobs (black)
+  bK: "🐉",    // Ender Dragon
+  bQ: "�\u200d♀️",  // Witch
+  bR: "🧨",    // Creeper -> TNT
+  bB: "👻",    // Enderman -> Ghost
+  bN: "💀",    // Skeleton
+  bP: "🧟"     // Zombie
 };
 
 interface Props {
