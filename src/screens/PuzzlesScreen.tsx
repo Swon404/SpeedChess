@@ -14,6 +14,7 @@ type MateFilter = "all" | 1 | 2 | 3;
 
 const DIFF_LABEL: Record<Difficulty | "all", string> = {
   all: "All",
+  beginner: "🔵 Beginner",
   easy: "🟢 Easy",
   medium: "🟡 Medium",
   hard: "🔴 Hard"
@@ -21,7 +22,7 @@ const DIFF_LABEL: Record<Difficulty | "all", string> = {
 
 export function PuzzlesScreen() {
   const { loadPosition, state, tryMove, store, activeProfile } = useGame();
-  const [difficulty, setDifficulty] = useState<Difficulty | "all">("easy");
+  const [difficulty, setDifficulty] = useState<Difficulty | "all">("beginner");
   const [mateIn, setMateIn] = useState<MateFilter>("all");
   const [newOnly, setNewOnly] = useState(true);
   const [index, setIndex] = useState(0);
@@ -52,6 +53,7 @@ export function PuzzlesScreen() {
   const diffCounts = useMemo(() => {
     const out: Record<Difficulty | "all", { solved: number; total: number }> = {
       all: { solved: 0, total: PUZZLES.length },
+      beginner: { solved: 0, total: 0 },
       easy: { solved: 0, total: 0 },
       medium: { solved: 0, total: 0 },
       hard: { solved: 0, total: 0 }
@@ -82,7 +84,7 @@ export function PuzzlesScreen() {
 
   useEffect(() => {
     if (!puzzle) return;
-    loadPosition(puzzle.setup(), { w: "You", b: "Puzzle" });
+    loadPosition(puzzle.setup(), { w: "You", b: "Puzzle" }, { noTimer: true });
     baselineHistoryRef.current = 0;
     setStatus("solving");
     setPlayedPlies(0);
@@ -137,7 +139,7 @@ export function PuzzlesScreen() {
 
   const retry = () => {
     if (!puzzle) return;
-    loadPosition(puzzle.setup(), { w: "You", b: "Puzzle" });
+    loadPosition(puzzle.setup(), { w: "You", b: "Puzzle" }, { noTimer: true });
     baselineHistoryRef.current = 0;
     setStatus("solving");
     setPlayedPlies(0);
@@ -169,7 +171,7 @@ export function PuzzlesScreen() {
 
       <div className="puzzle-tabs">
         <span className="tabs-label">Difficulty</span>
-        {(["easy", "medium", "hard", "all"] as const).map((d) => {
+        {(["beginner", "easy", "medium", "hard", "all"] as const).map((d) => {
           const c = diffCounts[d];
           return (
             <button key={d}

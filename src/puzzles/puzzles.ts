@@ -36,11 +36,13 @@ function make(p: PuzzleRow): Puzzle {
 
 export const PUZZLES: Puzzle[] = PUZZLE_DB.map(make);
 
-export type Difficulty = "easy" | "medium" | "hard";
+export type Difficulty = "beginner" | "easy" | "medium" | "hard";
 
 /** Derive a difficulty band from Lichess rating and mate distance. */
 export function puzzleDifficulty(p: Puzzle): Difficulty {
   const r = p.rating ?? (p.mateIn() === 1 ? 800 : p.mateIn() === 2 ? 1400 : 1800);
+  // Beginner = very low-rated mate-in-1s only — gentle intro with common mating patterns.
+  if (p.mateIn() === 1 && r <= 800) return "beginner";
   if (r < 1200) return "easy";
   if (r < 1600) return "medium";
   return "hard";

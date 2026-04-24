@@ -41,7 +41,7 @@ interface GameCtx {
   forfeit(): void;
 
   // puzzles
-  loadPosition(state: GameState, players?: Partial<Players>): void;
+  loadPosition(state: GameState, players?: Partial<Players>, opts?: { noTimer?: boolean }): void;
 
   // hint
   hint: Move | null;
@@ -174,12 +174,17 @@ export function GameProvider({ children }: { children: ReactNode }) {
   // just restored a mid-game timeLeft from localStorage).
   const lastHistLenRef = useRef<number>(state.history.length);
   const lastTimerSettingRef = useRef<number>(store.settings.timerSeconds);
+  const noTimerRef = useRef<boolean>(false);
   useEffect(() => {
     const t = store.settings.timerSeconds;
     const histChanged = state.history.length !== lastHistLenRef.current;
     const settingChanged = t !== lastTimerSettingRef.current;
     lastHistLenRef.current = state.history.length;
     lastTimerSettingRef.current = t;
+    if (noTimerRef.current) {
+      setTimeLeft(Infinity);
+      return;
+    }
     if (histChanged || settingChanged) {
       setTimeLeft(t > 0 ? t : Infinity);
     }
@@ -315,6 +320,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const newGame = useCallback((m: Mode, p?: Partial<Players>) => {
     clearActiveSession();
+    noTimerRef.current = false;
     setMode(m);
     const defaultW = activeProfile?.name ?? "White";
     const defaultB = m.kind === "bot" ? `Bot Lv ${m.level}` : "Player 2";
@@ -332,14 +338,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const forfeit = useCallback(() => dispatch({ type: "forfeit" }), []);
 
-  const loadPosition = useCallback((newState: GameState, p?: Partial<Players>) => {
+  const loadPosition = useCallback((newState: GameState, p?: Partial<Players>, opts?: { noTimer?: boolean }) => {
     clearActiveSession();
+    noTimerRef.current = !!opts?.noTimer;
     setMode({ kind: "two-player" });
     setPlayers({ w: p?.w ?? "You", b: p?.b ?? "Puzzle" });
     dispatch({ type: "set-state", state: newState });
     setSelected(null);
     setHint(null);
     setPaused(false);
+    if (opts?.noTimer) setTimeLeft(Infinity);
   }, []);
 
   const togglePause = useCallback(() => {

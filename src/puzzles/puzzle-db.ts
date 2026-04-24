@@ -11,6 +11,20 @@ export interface PuzzleRow {
 
 export const PUZZLE_DB: PuzzleRow[] = [
   {
+    "id": "00c89",
+    "fen": "2r3k1/6pp/p1q2r2/1pn2p2/1B1pPP2/3Pn1QB/1PP2R1P/6RK w - - 4 25",
+    "moves": [
+      "g3g7"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "master",
+      "mate",
+      "mateIn1"
+    ],
+    "rating": 400
+  },
+  {
     "id": "008LD",
     "fen": "8/6pp/6k1/5pN1/5P2/5rPb/4R2P/6K1 b - - 1 35",
     "moves": [
@@ -39,6 +53,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 409
   },
   {
+    "id": "00X66",
+    "fen": "4r1k1/6pp/1R3p2/P7/1P1p1B2/2b4P/5PP1/5K2 b - - 3 31",
+    "moves": [
+      "e8e1"
+    ],
+    "themes": [
+      "endgame",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 410
+  },
+  {
     "id": "00K48",
     "fen": "6k1/6pp/p2B4/2pP4/P1q5/6P1/2P1p2P/5RK1 w - - 0 27",
     "moves": [
@@ -51,6 +79,48 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "mateIn1"
     ],
     "rating": 425
+  },
+  {
+    "id": "01EB4",
+    "fen": "7k/6p1/2p4p/p3q3/P7/1P1B3P/2P3P1/5R1K w - - 0 33",
+    "moves": [
+      "f1f8"
+    ],
+    "themes": [
+      "endgame",
+      "master",
+      "mate",
+      "mateIn1"
+    ],
+    "rating": 437
+  },
+  {
+    "id": "00v6A",
+    "fen": "5r1k/p5pp/1p2p3/6PP/4P3/8/PPPr4/1K3R2 w - - 0 27",
+    "moves": [
+      "f1f8"
+    ],
+    "themes": [
+      "backRankMate",
+      "endgame",
+      "mate",
+      "mateIn1"
+    ],
+    "rating": 442
+  },
+  {
+    "id": "01RuT",
+    "fen": "8/8/8/1P5R/4bk2/4R2P/5P1K/r7 b - - 2 43",
+    "moves": [
+      "a1h1"
+    ],
+    "themes": [
+      "endgame",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 445
   },
   {
     "id": "002vV",
@@ -67,6 +137,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 446
   },
   {
+    "id": "00wtA",
+    "fen": "r4rk1/pb2qppp/1pn1p3/2p5/1nP5/1PQ1PN2/PB2BPPP/R4RK1 w - - 5 14",
+    "moves": [
+      "c3g7"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 448
+  },
+  {
     "id": "004iZ",
     "fen": "r2r2k1/2q1bpp1/3p3p/1ppn4/1P1BP3/P5Q1/4RPPP/R5K1 w - - 0 21",
     "moves": [
@@ -76,6 +160,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "kingsideAttack",
       "mate",
       "middlegame",
+      "mateIn1"
+    ],
+    "rating": 453
+  },
+  {
+    "id": "00dOP",
+    "fen": "r2q1k1r/pbp1bppp/1p2p3/1B1nN3/3P1Q2/8/PPP2PPP/R1B2RK1 w - - 6 13",
+    "moves": [
+      "f4f7"
+    ],
+    "themes": [
+      "mate",
+      "oneMove",
+      "opening",
       "mateIn1"
     ],
     "rating": 453
@@ -93,6 +191,48 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "mateIn1"
     ],
     "rating": 460
+  },
+  {
+    "id": "00all",
+    "fen": "6k1/5ppp/4p1b1/1n1pP3/1P6/r7/5PPP/2R2BK1 w - - 0 26",
+    "moves": [
+      "c1c8"
+    ],
+    "themes": [
+      "backRankMate",
+      "endgame",
+      "mate",
+      "mateIn1"
+    ],
+    "rating": 463
+  },
+  {
+    "id": "00lhe",
+    "fen": "r2q3k/ppp3bp/3pPp2/2n1n3/4P2P/1B3P2/PPP3Q1/2K3RR w - - 0 24",
+    "moves": [
+      "g2g7"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 469
+  },
+  {
+    "id": "00w1s",
+    "fen": "rn2q1k1/pb3p1p/1p1p2pB/3P3n/8/2bB1N1P/PP3PP1/4R1K1 w - - 0 19",
+    "moves": [
+      "e1e8"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 469
   },
   {
     "id": "00GRa",
@@ -137,6 +277,62 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 473
   },
   {
+    "id": "00eiu",
+    "fen": "r5k1/1b1pn1p1/1p5p/pq1PN2B/4P3/P6Q/6PP/5R1K b - - 0 26",
+    "moves": [
+      "b5f1"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 477
+  },
+  {
+    "id": "0119E",
+    "fen": "5q1k/7p/3Np1bP/4P3/3P2P1/2n5/8/5QK1 w - - 0 46",
+    "moves": [
+      "f1f8"
+    ],
+    "themes": [
+      "endgame",
+      "hangingPiece",
+      "mate",
+      "mateIn1"
+    ],
+    "rating": 477
+  },
+  {
+    "id": "01DM2",
+    "fen": "6k1/5p2/1p2pn2/3pN3/1P1P1Pp1/P3r1Pp/2R2P1P/6K1 b - - 0 32",
+    "moves": [
+      "e3e1"
+    ],
+    "themes": [
+      "endgame",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 479
+  },
+  {
+    "id": "00pcf",
+    "fen": "1k1r3r/ppqn2p1/2p1p1p1/8/1B1PQ3/2P5/PP3PPP/R4RK1 b - - 2 18",
+    "moves": [
+      "c7h2"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 482
+  },
+  {
     "id": "00FHX",
     "fen": "2r3k1/5p1p/4pP2/3p3P/8/5P2/p5P1/1bR3K1 w - - 1 31",
     "moves": [
@@ -146,6 +342,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "endgame",
       "hangingPiece",
       "mate",
+      "mateIn1"
+    ],
+    "rating": 485
+  },
+  {
+    "id": "01GC2",
+    "fen": "3b1k2/pp3prp/8/1Bp5/4R3/1P6/P4PPP/1K6 w - - 1 23",
+    "moves": [
+      "e4e8"
+    ],
+    "themes": [
+      "endgame",
+      "mate",
+      "oneMove",
       "mateIn1"
     ],
     "rating": 485
@@ -163,6 +373,48 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "mateIn1"
     ],
     "rating": 487
+  },
+  {
+    "id": "019Z4",
+    "fen": "r1b2rk1/p2n2bp/4pqp1/2pN4/5PPP/4B3/PPPQ4/2KR1B1R b - - 0 16",
+    "moves": [
+      "f6b2"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 495
+  },
+  {
+    "id": "00tsu",
+    "fen": "1r2kbnr/3b1ppp/pq1pp3/5P2/2pNP1P1/P1N1B3/1PPQ3P/2KR3R b k - 0 14",
+    "moves": [
+      "b6b2"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 504
+  },
+  {
+    "id": "00XNY",
+    "fen": "2r3k1/p4p2/1p1pq3/2p2p2/7R/2Q4P/1P3PP1/6K1 w - - 2 35",
+    "moves": [
+      "c3h8"
+    ],
+    "themes": [
+      "endgame",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 505
   },
   {
     "id": "00Dlt",
@@ -193,6 +445,48 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 512
   },
   {
+    "id": "00V59",
+    "fen": "rnb2rk1/5ppp/p2q4/1p1P4/2pN2n1/2N5/PP2BPPP/R2Q1RK1 b - - 1 14",
+    "moves": [
+      "d6h2"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 526
+  },
+  {
+    "id": "013UL",
+    "fen": "rb3rk1/5ppp/p1pqbn2/2Np4/1P2p3/P3P2P/1B1PBPP1/2RQ1RK1 b - - 0 18",
+    "moves": [
+      "d6h2"
+    ],
+    "themes": [
+      "mate",
+      "oneMove",
+      "opening",
+      "mateIn1"
+    ],
+    "rating": 536
+  },
+  {
+    "id": "01HBm",
+    "fen": "r4rk1/pb2bpp1/4pn1p/2pqN3/3p4/3P2BP/PPP1NPP1/1R1Q1RK1 b - - 3 15",
+    "moves": [
+      "d5g2"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 543
+  },
+  {
     "id": "00GoO",
     "fen": "r1b2rk1/ppb5/2p4p/2Ppqpp1/1P6/2NBP3/P4PPP/2RQ1RK1 b - - 1 16",
     "moves": [
@@ -205,6 +499,90 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "mateIn1"
     ],
     "rating": 544
+  },
+  {
+    "id": "00bSy",
+    "fen": "1kr1r3/1pp4p/p2b2p1/3N1p2/P7/3P1Q1P/2R2PP1/4R1K1 b - - 0 27",
+    "moves": [
+      "e8e1"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "master",
+      "mate",
+      "mateIn1"
+    ],
+    "rating": 544
+  },
+  {
+    "id": "01OTB",
+    "fen": "8/8/3R4/6Pk/1p3K2/8/8/1r6 w - - 4 60",
+    "moves": [
+      "d6h6"
+    ],
+    "themes": [
+      "endgame",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 546
+  },
+  {
+    "id": "00yve",
+    "fen": "4kb2/2p4p/ppN1P1p1/2n5/2P5/r5P1/2K4P/3R4 w - - 4 35",
+    "moves": [
+      "d1d8"
+    ],
+    "themes": [
+      "endgame",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 551
+  },
+  {
+    "id": "00teH",
+    "fen": "r1b4k/1pp1b1pp/p1np2q1/3Qp3/1PB1P3/P3Br1P/2P2PP1/R2R3K w - - 0 18",
+    "moves": [
+      "d5g8"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 559
+  },
+  {
+    "id": "01HvT",
+    "fen": "r1b1k2r/pp3ppp/2p1p3/4P1B1/Pbp1n3/2N1P3/1P3PPP/3RKB1R w Kkq - 1 11",
+    "moves": [
+      "d1d8"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 560
+  },
+  {
+    "id": "01IyI",
+    "fen": "k4n2/p2r1pp1/P1rBp2p/4P3/2P5/2K4P/5PP1/1R6 w - - 0 35",
+    "moves": [
+      "b1b8"
+    ],
+    "themes": [
+      "endgame",
+      "master",
+      "mate",
+      "mateIn1"
+    ],
+    "rating": 560
   },
   {
     "id": "00NR5",
@@ -235,6 +613,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 573
   },
   {
+    "id": "00wVj",
+    "fen": "5k2/R4p2/P6p/5p2/r3p3/2p3N1/2P1R1P1/2K5 b - - 2 44",
+    "moves": [
+      "a4a1"
+    ],
+    "themes": [
+      "endgame",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 573
+  },
+  {
     "id": "00EUB",
     "fen": "3r1k1r/5p1p/b2q1p2/P3p3/Bp2P3/2N2P2/3Q2PP/1R2K2R b K - 0 24",
     "moves": [
@@ -244,6 +636,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "mate",
       "middlegame",
       "oneMove",
+      "mateIn1"
+    ],
+    "rating": 578
+  },
+  {
+    "id": "00xiD",
+    "fen": "r4rk1/4qppp/b3p3/p2pP3/1p1P4/3Q4/PPB2PPP/R4RK1 w - - 0 18",
+    "moves": [
+      "d3h7"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "middlegame",
       "mateIn1"
     ],
     "rating": 578
@@ -291,6 +697,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 585
   },
   {
+    "id": "013tu",
+    "fen": "r3kb1r/1p3ppp/p1n5/2p1q3/B3P1n1/2NP4/PP2N1PP/R1BQ1RK1 b kq - 1 13",
+    "moves": [
+      "e5h2"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 587
+  },
+  {
     "id": "00QZV",
     "fen": "r1bk4/pppp3p/2n5/2b1prN1/8/1B6/PPPP2PP/RNB2R1K b - - 2 14",
     "moves": [
@@ -303,6 +723,76 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "mateIn1"
     ],
     "rating": 597
+  },
+  {
+    "id": "00ns1",
+    "fen": "5rk1/pp5p/2p1P1p1/3pN3/5r2/2P4Q/PP4PP/5R1K b - - 0 25",
+    "moves": [
+      "f4f1"
+    ],
+    "themes": [
+      "backRankMate",
+      "endgame",
+      "mate",
+      "mateIn1"
+    ],
+    "rating": 600
+  },
+  {
+    "id": "01J5O",
+    "fen": "r4r2/1pp1Nppk/3p4/p3n3/4P3/1PPP2P1/1P1K2P1/3R4 w - - 0 23",
+    "moves": [
+      "d1h1"
+    ],
+    "themes": [
+      "anastasiaMate",
+      "endgame",
+      "mate",
+      "mateIn1"
+    ],
+    "rating": 603
+  },
+  {
+    "id": "00Xiu",
+    "fen": "8/pp3Q1p/1n2B1pk/8/5PPq/7P/PPP5/2K5 b - f3 0 31",
+    "moves": [
+      "h4e1"
+    ],
+    "themes": [
+      "endgame",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 604
+  },
+  {
+    "id": "00rIF",
+    "fen": "1r6/p7/1p3k1K/P2p2R1/2p5/2P3P1/2P3P1/1R6 b - - 0 36",
+    "moves": [
+      "b8h8"
+    ],
+    "themes": [
+      "endgame",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 610
+  },
+  {
+    "id": "00ohT",
+    "fen": "6rk/3R3p/4P2r/1p3p2/p7/P1P5/1P3Rp1/4Q1K1 b - - 2 42",
+    "moves": [
+      "h6h1"
+    ],
+    "themes": [
+      "endgame",
+      "master",
+      "mate",
+      "mateIn1"
+    ],
+    "rating": 612
   },
   {
     "id": "00Hfa",
@@ -333,6 +823,34 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 627
   },
   {
+    "id": "00Xn1",
+    "fen": "3r2k1/5pp1/2p3np/2b5/Np2P1b1/1B4B1/1PP3PP/4KR2 b - - 1 21",
+    "moves": [
+      "d8d1"
+    ],
+    "themes": [
+      "master",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 627
+  },
+  {
+    "id": "01GkW",
+    "fen": "5b1k/pQ6/5qBp/5P2/6p1/7P/6PK/8 w - - 0 37",
+    "moves": [
+      "b7h7"
+    ],
+    "themes": [
+      "endgame",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 630
+  },
+  {
     "id": "00LUZ",
     "fen": "rnb1k1nr/1ppp1ppp/8/p1bPp3/4P2q/2PB1N2/PP3PPP/RNBQK2R b KQkq - 4 6",
     "moves": [
@@ -361,6 +879,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 633
   },
   {
+    "id": "00zxV",
+    "fen": "rn3k1r/pp2p2p/2p3p1/8/2B1n3/4q3/PQP3PP/RN3K1R w - - 4 15",
+    "moves": [
+      "b2h8"
+    ],
+    "themes": [
+      "hangingPiece",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 636
+  },
+  {
     "id": "007fJ",
     "fen": "1Q6/5ppp/8/8/8/2pk3P/3p2P1/3K4 b - - 0 52",
     "moves": [
@@ -373,6 +905,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "mateIn1"
     ],
     "rating": 638
+  },
+  {
+    "id": "00jUu",
+    "fen": "8/5ppk/p1Q4p/7P/1q2P3/5P2/1P4P1/1KRn4 b - - 3 45",
+    "moves": [
+      "b4b2"
+    ],
+    "themes": [
+      "endgame",
+      "master",
+      "mate",
+      "mateIn1"
+    ],
+    "rating": 644
   },
   {
     "id": "00656",
@@ -389,6 +935,76 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 645
   },
   {
+    "id": "00uV1",
+    "fen": "8/8/8/1p6/knp5/7R/pK6/8 w - - 0 53",
+    "moves": [
+      "h3a3"
+    ],
+    "themes": [
+      "endgame",
+      "master",
+      "mate",
+      "mateIn1"
+    ],
+    "rating": 648
+  },
+  {
+    "id": "016aw",
+    "fen": "6k1/4pp2/3p2p1/8/1P1QP2p/5Pqb/6B1/2R3K1 b - - 0 38",
+    "moves": [
+      "g3g2"
+    ],
+    "themes": [
+      "endgame",
+      "master",
+      "mate",
+      "mateIn1"
+    ],
+    "rating": 651
+  },
+  {
+    "id": "01Uoq",
+    "fen": "r4rk1/pb3ppp/2q2B2/4p3/8/2PB4/P1Q2PPP/R2R2K1 b - - 0 16",
+    "moves": [
+      "c6g2"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 652
+  },
+  {
+    "id": "010Jc",
+    "fen": "rnb1k2r/bpqp1pp1/p3p3/7p/4P1n1/1NNB3P/PPP1QPP1/R1B2R1K b kq - 2 11",
+    "moves": [
+      "c7h2"
+    ],
+    "themes": [
+      "master",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 654
+  },
+  {
+    "id": "01EfV",
+    "fen": "rn2k2r/ppq2p2/2p1pp2/8/2BN2p1/3P4/PPPB1P2/R2Q1RK1 b kq - 0 16",
+    "moves": [
+      "c7h2"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 654
+  },
+  {
     "id": "00HPz",
     "fen": "6r1/7p/2pk1p2/P2p4/P2KbP2/2N1P3/5R1P/8 b - - 2 35",
     "moves": [
@@ -401,6 +1017,62 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "mateIn1"
     ],
     "rating": 659
+  },
+  {
+    "id": "01S1N",
+    "fen": "6k1/5ppp/1P2p3/3p4/3nb3/6P1/1r5P/R5K1 w - - 1 34",
+    "moves": [
+      "a1a8"
+    ],
+    "themes": [
+      "backRankMate",
+      "endgame",
+      "mate",
+      "mateIn1"
+    ],
+    "rating": 663
+  },
+  {
+    "id": "01B3g",
+    "fen": "r2q1rk1/pp1b1pb1/2n1p3/6NP/3P4/3Qn3/PP2BPP1/2KR3R w - - 0 19",
+    "moves": [
+      "d3h7"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 667
+  },
+  {
+    "id": "00r3C",
+    "fen": "r2q1rk1/2p1nppp/pbn5/1p1pP3/3P4/2NQ1b2/PPB2PPP/R1B2RK1 w - - 0 13",
+    "moves": [
+      "d3h7"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 668
+  },
+  {
+    "id": "00lMW",
+    "fen": "2r4k/p5pp/1p2q3/2p3Q1/8/7P/PB3PP1/6K1 w - - 0 30",
+    "moves": [
+      "g5g7"
+    ],
+    "themes": [
+      "endgame",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 670
   },
   {
     "id": "00FaB",
@@ -445,6 +1117,48 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 675
   },
   {
+    "id": "00mJq",
+    "fen": "r1b5/pp1nkpr1/2q1p3/8/3N4/3B4/P1P2PPP/R2Q1RK1 b - - 4 18",
+    "moves": [
+      "c6g2"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 679
+  },
+  {
+    "id": "019i4",
+    "fen": "6rk/1R6/6Pp/p1p5/6K1/8/3b4/7r w - - 6 44",
+    "moves": [
+      "b7h7"
+    ],
+    "themes": [
+      "endgame",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 683
+  },
+  {
+    "id": "01Egl",
+    "fen": "2k5/r5p1/2K2p1p/8/7P/8/p7/4R3 w - - 0 62",
+    "moves": [
+      "e1e8"
+    ],
+    "themes": [
+      "endgame",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 686
+  },
+  {
     "id": "009YT",
     "fen": "rqnr2k1/5ppp/p7/4p3/8/1P5P/PBP2PP1/R2R2K1 w - - 0 24",
     "moves": [
@@ -457,6 +1171,34 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "mateIn1"
     ],
     "rating": 687
+  },
+  {
+    "id": "011To",
+    "fen": "r2qkbnr/pp1np2p/2p2p2/3p1p2/3P1B2/4P3/PPPN1PPP/R2QKB1R w KQkq - 0 8",
+    "moves": [
+      "d1h5"
+    ],
+    "themes": [
+      "mate",
+      "oneMove",
+      "opening",
+      "mateIn1"
+    ],
+    "rating": 692
+  },
+  {
+    "id": "00ud8",
+    "fen": "N4rk1/pp3ppp/5n2/3pq3/8/2P2Q2/PP3PPP/R1B3K1 b - - 1 18",
+    "moves": [
+      "e5e1"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 699
   },
   {
     "id": "009L0",
@@ -473,6 +1215,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 706
   },
   {
+    "id": "01VEo",
+    "fen": "r3k2r/pN3pp1/2pqpn2/6p1/2P5/8/PPP1QPPP/R4RK1 b kq - 0 15",
+    "moves": [
+      "d6h2"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 710
+  },
+  {
     "id": "000rZ",
     "fen": "2kr1b1r/p1p2pp1/2pqN3/7p/6n1/2NPB3/PPP2PPP/R2Q1RK1 b - - 0 13",
     "moves": [
@@ -480,6 +1236,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
     ],
     "themes": [
       "kingsideAttack",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 716
+  },
+  {
+    "id": "01BjV",
+    "fen": "1r6/8/3bk3/2p5/P2pN3/3P3P/R4PP1/6K1 b - - 0 47",
+    "moves": [
+      "b8b1"
+    ],
+    "themes": [
+      "endgame",
       "mate",
       "oneMove",
       "mateIn1"
@@ -501,6 +1271,62 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 717
   },
   {
+    "id": "01Pbw",
+    "fen": "6k1/ppp2pp1/7p/8/2R5/2Pr4/PR4PP/7K b - - 0 26",
+    "moves": [
+      "d3d1"
+    ],
+    "themes": [
+      "backRankMate",
+      "endgame",
+      "mate",
+      "mateIn1"
+    ],
+    "rating": 717
+  },
+  {
+    "id": "00aZP",
+    "fen": "r1b1k2r/p1p2ppp/1pN2n2/2n5/2B1P3/P1b5/1PP2PPP/R1BR2K1 w kq - 0 14",
+    "moves": [
+      "d1d8"
+    ],
+    "themes": [
+      "mate",
+      "oneMove",
+      "opening",
+      "mateIn1"
+    ],
+    "rating": 720
+  },
+  {
+    "id": "00fK0",
+    "fen": "r2q1r2/pp3pk1/2npbNp1/2pN4/2B4Q/3P4/PPP3PP/R5K1 w - - 2 18",
+    "moves": [
+      "h4h7"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 720
+  },
+  {
+    "id": "01BKZ",
+    "fen": "2kr1bnr/ppp2ppp/8/8/8/P4N2/b1PBPPPP/2KR1B1R b - - 0 11",
+    "moves": [
+      "f8a3"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 720
+  },
+  {
     "id": "007c6",
     "fen": "2kr3r/p2n2pp/2pB1bp1/5q2/2B5/8/PPP2PPP/3R1RK1 w - - 0 18",
     "moves": [
@@ -513,6 +1339,48 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "mateIn1"
     ],
     "rating": 721
+  },
+  {
+    "id": "00g2W",
+    "fen": "6k1/1q4p1/p2P2B1/8/7P/6P1/P4Q1K/4r3 b - - 6 36",
+    "moves": [
+      "b7h1"
+    ],
+    "themes": [
+      "endgame",
+      "master",
+      "mate",
+      "mateIn1"
+    ],
+    "rating": 726
+  },
+  {
+    "id": "01LBw",
+    "fen": "r6r/ppp1kBp1/2np4/4p3/4P1Q1/P2P3q/1PPN1P2/R4RK1 b - - 0 17",
+    "moves": [
+      "h3g4"
+    ],
+    "themes": [
+      "hangingPiece",
+      "kingsideAttack",
+      "mate",
+      "mateIn1"
+    ],
+    "rating": 727
+  },
+  {
+    "id": "00qyT",
+    "fen": "2rq1rk1/pb2bppp/np2p3/3pP3/3P4/P1nQB3/1P1N1PPP/1BR2RK1 w - - 0 17",
+    "moves": [
+      "d3h7"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 732
   },
   {
     "id": "00Flp",
@@ -533,6 +1401,34 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "fen": "8/5k2/1P4RK/6P1/1r6/8/8/8 b - - 2 58",
     "moves": [
       "b4h4"
+    ],
+    "themes": [
+      "endgame",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 745
+  },
+  {
+    "id": "00luA",
+    "fen": "r2q1rk1/1b3pp1/p3p3/6b1/1pnN1n2/3Q4/PPP1NB2/1K1R1B1R w - - 0 21",
+    "moves": [
+      "d3h7"
+    ],
+    "themes": [
+      "master",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 745
+  },
+  {
+    "id": "016ow",
+    "fen": "1B3k2/5P2/5K2/7p/P4P1P/8/8/2q5 w - - 0 48",
+    "moves": [
+      "b8d6"
     ],
     "themes": [
       "endgame",
@@ -571,6 +1467,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 754
   },
   {
+    "id": "00WiZ",
+    "fen": "3r1rk1/p3R2p/b2P2p1/2p5/7Q/P2q1P1P/6P1/2R3K1 w - - 0 35",
+    "moves": [
+      "h4h7"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 757
+  },
+  {
     "id": "009fH",
     "fen": "rn2kb1r/pQ2pppp/2p2n2/8/3q2b1/8/PPP2PPP/RNB1KBNR b KQkq - 0 7",
     "moves": [
@@ -599,6 +1509,34 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 760
   },
   {
+    "id": "01EFz",
+    "fen": "2r2rk1/p2bbpp1/2n1p2p/q2nP1N1/3P1B1P/2PQ4/P2N1PP1/R3K2R w KQ - 1 17",
+    "moves": [
+      "d3h7"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 763
+  },
+  {
+    "id": "00ndv",
+    "fen": "r1bq1rk1/pp2npp1/4p3/3p4/3P2n1/2P2NP1/PPQN1PP1/R3K2R w KQ - 0 14",
+    "moves": [
+      "c2h7"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 764
+  },
+  {
     "id": "00DPQ",
     "fen": "2k4r/pp3pp1/4pn2/2np2p1/8/1B1P1Pq1/PPPN3R/R2Q3K b - - 7 20",
     "moves": [
@@ -608,6 +1546,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "kingsideAttack",
       "mate",
       "middlegame",
+      "mateIn1"
+    ],
+    "rating": 765
+  },
+  {
+    "id": "00c0D",
+    "fen": "rnb1k2r/ppB2p2/8/3p2p1/3Q2np/2N2N1K/PPP1B1PP/R6R b kq - 1 14",
+    "moves": [
+      "g4f2"
+    ],
+    "themes": [
+      "discoveredCheck",
+      "doubleCheck",
+      "mate",
       "mateIn1"
     ],
     "rating": 765
@@ -627,6 +1579,104 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 771
   },
   {
+    "id": "01Ivs",
+    "fen": "r1k4r/pp3Qp1/2Bb3p/4q3/4N3/8/PP3PPP/R4RK1 b - - 0 18",
+    "moves": [
+      "e5h2"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 779
+  },
+  {
+    "id": "00ggZ",
+    "fen": "5r1k/1pr3pp/p3b3/P7/1P5Q/4q1P1/6PK/RB6 w - - 0 38",
+    "moves": [
+      "h4h7"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 780
+  },
+  {
+    "id": "00t3g",
+    "fen": "r2q1rk1/pp1n3p/2p3pb/5N2/2P1p3/1P2P1P1/PB3PBP/R2R2K1 w - - 0 20",
+    "moves": [
+      "f5h6"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "master",
+      "mate",
+      "mateIn1"
+    ],
+    "rating": 783
+  },
+  {
+    "id": "00bnX",
+    "fen": "4rr1k/ppp3pp/3b1p2/6qQ/8/1PBB3P/P1P3P1/5RK1 w - - 14 27",
+    "moves": [
+      "h5h7"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 790
+  },
+  {
+    "id": "015i1",
+    "fen": "r2q1rk1/pp1b1pp1/2n1p1n1/2b1P1NQ/3p4/P7/1P3PPP/RNB2RK1 w - - 4 14",
+    "moves": [
+      "h5h7"
+    ],
+    "themes": [
+      "mate",
+      "oneMove",
+      "opening",
+      "mateIn1"
+    ],
+    "rating": 791
+  },
+  {
+    "id": "0158e",
+    "fen": "4k3/4p2R/1pp1P1p1/8/3pN3/4b3/1rP3PP/5K2 w - - 0 26",
+    "moves": [
+      "h7h8"
+    ],
+    "themes": [
+      "endgame",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 797
+  },
+  {
+    "id": "018YV",
+    "fen": "b4rk1/p1q2pbp/4p1p1/1PPp4/7r/1Q3P2/P1N2BPP/4RR1K b - - 6 31",
+    "moves": [
+      "c7h2"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 799
+  },
+  {
     "id": "00CYP",
     "fen": "3r1k1r/p1p2pp1/1p6/2pQ1b2/2Pn1P2/8/PP1P1KBq/R1B1R3 w - - 4 26",
     "moves": [
@@ -639,6 +1689,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "mateIn1"
     ],
     "rating": 800
+  },
+  {
+    "id": "00f1D",
+    "fen": "r2q2kr/1p2b1pp/p2pb3/4p3/2B1P3/5Q2/PP3PPP/2RR2K1 w - - 0 18",
+    "moves": [
+      "c4e6"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 805
   },
   {
     "id": "00OPk",
@@ -681,6 +1745,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "mateIn1"
     ],
     "rating": 819
+  },
+  {
+    "id": "00pCr",
+    "fen": "6nk/pRQ4p/6p1/5p2/3bp3/5nP1/q4PKP/5B2 w - - 4 32",
+    "moves": [
+      "c7h7"
+    ],
+    "themes": [
+      "master",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 825
   },
   {
     "id": "008rw",
@@ -739,6 +1817,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 831
   },
   {
+    "id": "00dzs",
+    "fen": "2k2b1r/1p1n1ppp/1B6/1p6/8/5K2/PPr2PPP/3RR3 w - - 2 20",
+    "moves": [
+      "e1e8"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 835
+  },
+  {
     "id": "00OXc",
     "fen": "8/5K1p/1p5k/6p1/3brp2/5R2/8/8 w - - 0 51",
     "moves": [
@@ -751,6 +1843,48 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "mateIn1"
     ],
     "rating": 841
+  },
+  {
+    "id": "00X1l",
+    "fen": "5r1k/Q6p/1pb3p1/4q3/4p3/1BP4P/PP4p1/5RK1 w - - 0 31",
+    "moves": [
+      "f1f8"
+    ],
+    "themes": [
+      "endgame",
+      "hangingPiece",
+      "mate",
+      "mateIn1"
+    ],
+    "rating": 848
+  },
+  {
+    "id": "00bzC",
+    "fen": "r1r3k1/2p3p1/p2p3p/Pp1Pp3/4P3/3P1p1q/R1Q2P1N/4R2K b - - 1 28",
+    "moves": [
+      "h3g2"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 850
+  },
+  {
+    "id": "00dEJ",
+    "fen": "1br2rk1/ppqn2pp/4p3/1P6/P3B3/8/1B3PPP/2RQ1RK1 b - - 2 18",
+    "moves": [
+      "c7h2"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 850
   },
   {
     "id": "009eX",
@@ -823,6 +1957,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 858
   },
   {
+    "id": "00k4u",
+    "fen": "r2N2r1/p2P1p2/1p1Q1p1k/6qp/5R2/P2B3P/1P3PP1/6K1 b - - 0 28",
+    "moves": [
+      "g5g2"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "master",
+      "mate",
+      "mateIn1"
+    ],
+    "rating": 863
+  },
+  {
     "id": "00Ozz",
     "fen": "3kr3/3n1B1p/2pP4/p1n5/Ppp5/8/1P3PPP/4R1K1 w - - 0 33",
     "moves": [
@@ -869,6 +2017,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "fen": "6k1/6b1/p1Q1p2p/1pN4r/3P3q/2P5/P4PP1/1R2R1K1 b - - 0 31",
     "moves": [
       "h4h1"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 879
+  },
+  {
+    "id": "00Zx9",
+    "fen": "r1b1k1nr/ppp2ppp/6q1/4p1B1/2B2P2/7P/P5P1/1N1Q2K1 w kq - 0 15",
+    "moves": [
+      "d1d8"
     ],
     "themes": [
       "mate",
@@ -963,6 +2125,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 895
   },
   {
+    "id": "00Vv9",
+    "fen": "5r1k/pp4pp/5r2/3NQ3/3P4/5pN1/Pq5P/2R2R1K b - - 1 29",
+    "moves": [
+      "b2g2"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 899
+  },
+  {
     "id": "0082f",
     "fen": "r4rk1/2q2ppp/3pp3/4Pb1N/1p6/1p4Q1/PPP3PP/1K1RR3 w - - 0 22",
     "moves": [
@@ -975,6 +2151,34 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "mateIn1"
     ],
     "rating": 902
+  },
+  {
+    "id": "00YqR",
+    "fen": "5k2/p1p4Q/1pPpBp2/2qP3b/8/2P5/P6P/7K b - - 0 33",
+    "moves": [
+      "h5f3"
+    ],
+    "themes": [
+      "endgame",
+      "master",
+      "mate",
+      "mateIn1"
+    ],
+    "rating": 908
+  },
+  {
+    "id": "00ad3",
+    "fen": "2kr3r/ppp2p2/2nb1n1p/4q1p1/Q1N5/2P1B3/PP2NPPP/R4RK1 b - - 3 13",
+    "moves": [
+      "e5h2"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 913
   },
   {
     "id": "00ERL",
@@ -1047,6 +2251,34 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 923
   },
   {
+    "id": "00beo",
+    "fen": "r4rk1/pb1Q2pp/1p2p1q1/2b5/2P5/P1N1B2P/1P2BPP1/R4RK1 b - - 0 18",
+    "moves": [
+      "g6g2"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 924
+  },
+  {
+    "id": "00kT1",
+    "fen": "r2q1rk1/pb2bpp1/2p1p3/4P3/3P3p/P1PQnN1P/2B2PP1/R4RK1 w - - 0 19",
+    "moves": [
+      "d3h7"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 924
+  },
+  {
     "id": "002CP",
     "fen": "r5k1/pp4pp/4p1q1/4p3/3n4/P3Q1P1/1PP4P/2KR1R2 b - - 5 24",
     "moves": [
@@ -1103,6 +2335,62 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 930
   },
   {
+    "id": "00nlD",
+    "fen": "1r2r3/pp3pk1/2pp2p1/1P2p2p/2P3nq/3PP1N1/P2Q1PB1/1R3RK1 b - - 1 23",
+    "moves": [
+      "h4h2"
+    ],
+    "themes": [
+      "master",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 940
+  },
+  {
+    "id": "00Xdc",
+    "fen": "r1br1N1k/ppp2Bbn/2n4p/q7/3P4/2N5/PPP2PPP/R1B2RK1 w - - 0 16",
+    "moves": [
+      "f8g6"
+    ],
+    "themes": [
+      "mate",
+      "oneMove",
+      "opening",
+      "mateIn1"
+    ],
+    "rating": 945
+  },
+  {
+    "id": "00Yfi",
+    "fen": "1Q6/5p1k/4b1pp/5B2/3p2KP/6P1/P3R3/5r2 b - - 0 45",
+    "moves": [
+      "e6f5"
+    ],
+    "themes": [
+      "endgame",
+      "mate",
+      "morphysMate",
+      "mateIn1"
+    ],
+    "rating": 948
+  },
+  {
+    "id": "00Zh6",
+    "fen": "r1bqkn1r/ppb1n2p/2p1pp2/4N3/3PN3/3B4/PPPQ1PPP/R3K2R w KQkq - 0 13",
+    "moves": [
+      "e4f6"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 950
+  },
+  {
     "id": "00HnR",
     "fen": "q5kr/p4p2/4b1p1/4B2p/5n2/2P5/P1Q2PPP/3R1RK1 b - - 0 21",
     "moves": [
@@ -1115,6 +2403,104 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "mateIn1"
     ],
     "rating": 951
+  },
+  {
+    "id": "00WAp",
+    "fen": "r5k1/4p2p/p5p1/1p1b2Q1/2p5/P4q2/1P3P2/R2R2KN b - - 0 28",
+    "moves": [
+      "f3h1"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 956
+  },
+  {
+    "id": "00pHb",
+    "fen": "r6k/4qp1p/p4NrQ/1p2p3/3pP3/1P1P3P/1PP3P1/5RK1 w - - 3 24",
+    "moves": [
+      "h6h7"
+    ],
+    "themes": [
+      "endgame",
+      "kingsideAttack",
+      "master",
+      "mateIn1"
+    ],
+    "rating": 956
+  },
+  {
+    "id": "00jd8",
+    "fen": "4b2k/R7/p4q2/2P1r2p/3QP1pP/1B6/P5pR/6K1 b - - 1 36",
+    "moves": [
+      "f6f1"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 958
+  },
+  {
+    "id": "00b58",
+    "fen": "4k2r/1bq2pb1/4p3/1p4p1/2pN4/R7/1P2BPPP/3Q1RK1 b k - 0 17",
+    "moves": [
+      "c7h2"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 961
+  },
+  {
+    "id": "00pmn",
+    "fen": "8/P6p/6p1/1k6/3Qq3/1PP5/6PP/6K1 b - - 0 35",
+    "moves": [
+      "e4e1"
+    ],
+    "themes": [
+      "endgame",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 969
+  },
+  {
+    "id": "00rTX",
+    "fen": "3r2k1/pp3ppp/4p3/2N5/7q/1Q3P2/PP1R2PP/4R2K b - - 0 24",
+    "moves": [
+      "h4e1"
+    ],
+    "themes": [
+      "backRankMate",
+      "endgame",
+      "hangingPiece",
+      "mateIn1"
+    ],
+    "rating": 977
+  },
+  {
+    "id": "00f7K",
+    "fen": "r3k3/ppP2pp1/8/3Nn3/1bP3p1/4P1Pq/PP2NK2/R1BQ1R2 b q - 4 18",
+    "moves": [
+      "h3h2"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 978
   },
   {
     "id": "002Q2",
@@ -1145,6 +2531,34 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 986
   },
   {
+    "id": "00eC6",
+    "fen": "2kr4/1p3p2/1P6/Q1ppP3/3NnPqp/8/P6P/2R1R2K b - - 2 29",
+    "moves": [
+      "e4f2"
+    ],
+    "themes": [
+      "cornerMate",
+      "master",
+      "mate",
+      "mateIn1"
+    ],
+    "rating": 988
+  },
+  {
+    "id": "00fZM",
+    "fen": "5rk1/1q3r2/3p2pQ/3p4/3B4/2P2P2/P5PP/6K1 w - - 0 31",
+    "moves": [
+      "h6h8"
+    ],
+    "themes": [
+      "endgame",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 988
+  },
+  {
     "id": "00Tmr",
     "fen": "2r3rk/6pp/p6N/1p1p4/2pq4/P6P/1P3PP1/4R1K1 w - - 0 37",
     "moves": [
@@ -1157,6 +2571,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "mateIn1"
     ],
     "rating": 990
+  },
+  {
+    "id": "00ems",
+    "fen": "2r1r1k1/1bpn1ppp/p4n2/1p6/1P1N2q1/P3P3/1BB1QPPP/3R1RK1 b - - 7 18",
+    "moves": [
+      "g4g2"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 993
   },
   {
     "id": "00SeK",
@@ -1187,6 +2615,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 996
   },
   {
+    "id": "00cl7",
+    "fen": "r5k1/ppp1p1b1/4N1Q1/3pq1Bp/7P/5N2/PPP2rP1/2KR4 b - - 2 17",
+    "moves": [
+      "e5b2"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 996
+  },
+  {
     "id": "00J7i",
     "fen": "3r2k1/pQ4pp/4p1n1/2q5/2P5/2B3P1/P4PBP/6K1 w - - 0 25",
     "moves": [
@@ -1201,6 +2643,48 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 999
   },
   {
+    "id": "00b3n",
+    "fen": "1Q5R/5pk1/5rpp/8/8/4P1PK/4qPQP/8 b - - 0 41",
+    "moves": [
+      "e2h5"
+    ],
+    "themes": [
+      "endgame",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 999
+  },
+  {
+    "id": "00fDM",
+    "fen": "3rr1k1/2p3b1/1p2q2Q/3p4/1P6/2B4P/6P1/3R2K1 w - - 0 34",
+    "moves": [
+      "h6g7"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 1001
+  },
+  {
+    "id": "00fpk",
+    "fen": "rq2kb1r/1b1p1pp1/p3pn2/1p5p/4P1n1/1NN1BB1P/PPP1QPP1/R4RK1 b kq - 0 14",
+    "moves": [
+      "b8h2"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 1005
+  },
+  {
     "id": "00Lnf",
     "fen": "r4knb/1bpp4/p1n1p2q/1p4NQ/3PP3/2N5/PPP2PP1/2KR1B2 w - - 4 16",
     "moves": [
@@ -1213,6 +2697,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "mateIn1"
     ],
     "rating": 1010
+  },
+  {
+    "id": "00d8a",
+    "fen": "r1b1k2r/1p3p2/p1pqp3/2b2Ppp/4P1n1/2NB1Q1P/PPP3P1/R3BR1K b kq - 2 15",
+    "moves": [
+      "d6h2"
+    ],
+    "themes": [
+      "master",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 1018
   },
   {
     "id": "006GK",
@@ -1355,6 +2853,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 1055
   },
   {
+    "id": "00cZ4",
+    "fen": "8/2R5/6pk/p3p2p/4Nq2/5n1P/P4RP1/7K b - - 1 41",
+    "moves": [
+      "f4h2"
+    ],
+    "themes": [
+      "endgame",
+      "master",
+      "mate",
+      "mateIn1"
+    ],
+    "rating": 1056
+  },
+  {
     "id": "00DWo",
     "fen": "b4b1r/3k1ppp/p2p4/1p2p3/3Pq3/N3B3/PP3PPP/R2Q1RK1 b - - 0 16",
     "moves": [
@@ -1364,6 +2876,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "kingsideAttack",
       "mate",
       "middlegame",
+      "mateIn1"
+    ],
+    "rating": 1060
+  },
+  {
+    "id": "00kyA",
+    "fen": "k2r3r/pp6/6R1/3P2Pp/2P2B1n/P1N4q/1P3P2/R4QK1 b - - 2 24",
+    "moves": [
+      "h4f3"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
       "mateIn1"
     ],
     "rating": 1060
@@ -1383,6 +2909,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 1068
   },
   {
+    "id": "00pDE",
+    "fen": "r3k2r/pp3p2/1qN1p2p/3p4/P7/8/1PPK1bPP/R2Q1B1R b kq - 1 17",
+    "moves": [
+      "b6e3"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 1074
+  },
+  {
     "id": "00Pw1",
     "fen": "5r1k/2p3Rp/3p4/p2Pn3/1p2B3/1P6/PKP1r2P/6R1 w - - 2 29",
     "moves": [
@@ -1395,6 +2935,48 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "mateIn1"
     ],
     "rating": 1075
+  },
+  {
+    "id": "00nCq",
+    "fen": "r3k2r/ppp2p1p/3b1p2/4p3/8/1PPB4/b1PQ1PPP/2KR3R b kq - 0 14",
+    "moves": [
+      "d6a3"
+    ],
+    "themes": [
+      "doubleBishopMate",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 1085
+  },
+  {
+    "id": "00euQ",
+    "fen": "r1b1k1nr/pppp1ppp/5q2/2b1N3/4P3/2N5/PPPP2PP/R1BQKB1R b KQkq - 0 6",
+    "moves": [
+      "f6f2"
+    ],
+    "themes": [
+      "mate",
+      "oneMove",
+      "opening",
+      "mateIn1"
+    ],
+    "rating": 1087
+  },
+  {
+    "id": "00eNa",
+    "fen": "rnb1k2r/p1p2ppp/1p3n2/2b3B1/3qP3/3P1N2/PPP3PP/RN1QKB1R b KQkq - 2 8",
+    "moves": [
+      "d4f2"
+    ],
+    "themes": [
+      "mate",
+      "oneMove",
+      "opening",
+      "mateIn1"
+    ],
+    "rating": 1090
   },
   {
     "id": "00MYL",
@@ -1411,6 +2993,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 1100
   },
   {
+    "id": "00bZ2",
+    "fen": "4b1k1/4P2p/p1p3pP/6q1/3Q4/Pr6/1PP3P1/1K6 w - - 0 37",
+    "moves": [
+      "d4g7"
+    ],
+    "themes": [
+      "endgame",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 1106
+  },
+  {
     "id": "00EDa",
     "fen": "r1bk3r/ppp1np1p/3P2pP/1N4q1/2BP1n2/8/PPP3P1/R1BQ2KR b - - 0 14",
     "moves": [
@@ -1419,6 +3015,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "themes": [
       "kingsideAttack",
       "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 1113
+  },
+  {
+    "id": "00oai",
+    "fen": "r1b2kn1/pppp2p1/2n2p2/4p2Q/2B1q3/4b2N/PPPPK2P/R1B5 w - - 0 14",
+    "moves": [
+      "h5f7"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
       "oneMove",
       "mateIn1"
     ],
@@ -1437,6 +3047,34 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "mateIn1"
     ],
     "rating": 1116
+  },
+  {
+    "id": "00c6X",
+    "fen": "r5rk/pp3p2/5p1p/q4N1Q/5n2/8/P4PPP/R2R2K1 w - - 6 22",
+    "moves": [
+      "h5h6"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 1116
+  },
+  {
+    "id": "00lio",
+    "fen": "r4k2/1p4R1/3pQ3/pP2p3/4q3/4Pr2/8/7K w - - 5 39",
+    "moves": [
+      "e6g8"
+    ],
+    "themes": [
+      "endgame",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 1117
   },
   {
     "id": "00M0i",
@@ -1509,6 +3147,20 @@ export const PUZZLE_DB: PuzzleRow[] = [
     "rating": 1132
   },
   {
+    "id": "00X2S",
+    "fen": "2kr4/1p5p/p1p1b3/Q3Bqp1/8/4PB2/1PP2PPP/1K6 w - g6 0 25",
+    "moves": [
+      "a5c7"
+    ],
+    "themes": [
+      "endgame",
+      "mate",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 1134
+  },
+  {
     "id": "001wb",
     "fen": "r3k2r/pb1p1ppp/1b4q1/1Q2P3/8/2NP1PP1/PP4P1/R1B2R1K b kq - 0 17",
     "moves": [
@@ -1549,6 +3201,34 @@ export const PUZZLE_DB: PuzzleRow[] = [
       "mateIn1"
     ],
     "rating": 1167
+  },
+  {
+    "id": "00jPw",
+    "fen": "r3r1k1/ppp2R2/1b5Q/3PP2n/2B3bq/2N5/PP4PP/R6K b - - 0 18",
+    "moves": [
+      "h5g3"
+    ],
+    "themes": [
+      "mate",
+      "middlegame",
+      "oneMove",
+      "mateIn1"
+    ],
+    "rating": 1181
+  },
+  {
+    "id": "00n6z",
+    "fen": "R3rk1q/p3Np2/1pp5/8/P1Q1P1pP/2P2P2/1P3bP1/3R3K b - - 0 34",
+    "moves": [
+      "h8h4"
+    ],
+    "themes": [
+      "kingsideAttack",
+      "mate",
+      "middlegame",
+      "mateIn1"
+    ],
+    "rating": 1188
   },
   {
     "id": "009J1",

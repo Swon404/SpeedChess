@@ -55,13 +55,15 @@ async function main() {
     pathToFileURL(path.join(__dirname, "..", "src", "engine", "rules.ts")).href
   );
 
-  const perBucketCap = Math.ceil(total / 9); // 3 mate-in × 3 difficulty bands
+  const perBucketCap = Math.ceil(total / 9); // 3 mate-in × 3 difficulty bands (non-beginner)
+  const beginnerCap = 120; // extra bucket for very-low-rated mate-in-1s
   // Bucketed by [mateIn][difficulty] so we get even coverage across both axes.
   const buckets: Record<1 | 2 | 3, { easy: any[]; medium: any[]; hard: any[] }> = {
     1: { easy: [], medium: [], hard: [] },
     2: { easy: [], medium: [], hard: [] },
     3: { easy: [], medium: [], hard: [] }
   };
+  const beginners: any[] = [];
   const bandOf = (r: number): "easy" | "medium" | "hard" =>
     r < 1200 ? "easy" : r < 1600 ? "medium" : "hard";
 
@@ -84,8 +86,10 @@ async function main() {
     if (!mateIn) return;
     const rating = parseInt(RatingS, 10) || 0;
     if (!rating) return;
+
+    const isBeginner = mateIn === 1 && rating <= 800 && beginners.length < beginnerCap;
     const band = bandOf(rating);
-    if (buckets[mateIn][band].length >= perBucketCap) return;
+    if (!isBeginner && buckets[mateIn][band].length >= perBucketCap) return;
 
     const moveList = Moves.split(" ");
     // Expected ply count: mateIn*2 - 1 (player is the last to move).
@@ -103,13 +107,15 @@ async function main() {
       const startState = makeMove(pre, setupMove);
       const startFen = toFEN(startState);
       const remaining = moveList.slice(1);
-      buckets[mateIn][band].push({
+      const entry = {
         id: PuzzleId,
         fen: startFen,
         moves: remaining,
         themes: themes.filter((t: string) => t !== "mateIn1" && t !== "mateIn2" && t !== "mateIn3").slice(0, 3).concat([`mateIn${mateIn}`]),
         rating
-      });
+      };
+      if (isBeginner) beginners.push(entry);
+      else buckets[mateIn][band].push(entry);
     } catch {
       // skip invalid
     }
@@ -117,9 +123,12 @@ async function main() {
 
   await new Promise<void>((resolve) => rl.on("close", () => resolve()));
 
-  // Sort each bucket by rating ascending and assemble output.
+  // Sort buckets and assemble output.
   const out: any[] = [];
   const counts: Record<string, number> = {};
+  beginners.sort((a, b) => a.rating - b.rating);
+  out.push(...beginners);
+  counts["mate-1-beginner"] = beginners.length;
   for (const n of [1, 2, 3] as const) {
     for (const b of ["easy", "medium", "hard"] as const) {
       buckets[n][b].sort((a, b2) => a.rating - b2.rating);
