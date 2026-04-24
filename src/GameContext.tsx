@@ -436,7 +436,15 @@ function isInCheckNow(s: GameState): boolean {
 
 function cloneStore(s: Store): Store {
   return {
-    profiles: s.profiles.map((p) => ({ ...p, stats: { ...p.stats, byBotLevel: { ...p.stats.byBotLevel }, badges: p.stats.badges.slice() } })),
+    profiles: s.profiles.map((p) => ({
+      ...p,
+      stats: {
+        ...p.stats,
+        byBotLevel: { ...p.stats.byBotLevel },
+        badges: p.stats.badges.slice(),
+        puzzleProgress: { ...(p.stats.puzzleProgress ?? {}) }
+      }
+    })),
     settings: { ...s.settings },
     savedGames: { ...s.savedGames }
   };
