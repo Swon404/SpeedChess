@@ -7,6 +7,11 @@ const GLYPH: Record<string, string> = {
   bK: "♚", bQ: "♛", bR: "♜", bB: "♝", bN: "♞", bP: "♟"
 };
 
+const EMOJI: Record<string, string> = {
+  wK: "🤴", wQ: "👸", wR: "🏰", wB: "🧚", wN: "🦄", wP: "🐣",
+  bK: "🦹", bQ: "🧙‍♀️", bR: "🗻", bB: "🧛", bN: "🐲", bP: "🐸"
+};
+
 interface Props {
   color: Color;
   type: PieceType;
@@ -18,6 +23,13 @@ export function Piece({ color, type, set }: Props) {
     return (
       <span className={`piece-glyph piece-${color}`}>
         {GLYPH[color + type]}
+      </span>
+    );
+  }
+  if (set === "emoji") {
+    return (
+      <span className={`piece-emoji piece-${color}`}>
+        {EMOJI[color + type]}
       </span>
     );
   }

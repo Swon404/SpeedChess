@@ -36,13 +36,13 @@ export function SettingsScreen() {
       <section>
         <h3>Piece set</h3>
         <div className="difficulty">
-          {(["classic", "modern", "neon"] as const).map((t) => (
+          {(["classic", "modern", "neon", "emoji"] as const).map((t) => (
             <button key={t}
               className={t === s.pieceSet ? "pill active" : "pill"}
               onClick={() => updateSetting("pieceSet", t)}>{t}</button>
           ))}
         </div>
-        <p className="hint">Classic = Unicode ♚ · Modern = crisp SVG · Neon = glow</p>
+        <p className="hint">Classic = Unicode ♚ · Modern = crisp SVG · Neon = glow · Emoji = 🦄 silly mode</p>
       </section>
 
       <section>
@@ -51,6 +51,7 @@ export function SettingsScreen() {
         <label><input type="checkbox" checked={s.haptics} onChange={(e) => updateSetting("haptics", e.target.checked)} /> Haptics (iPhone)</label>
         <label><input type="checkbox" checked={s.autoFlip} onChange={(e) => updateSetting("autoFlip", e.target.checked)} /> Auto-flip board in 2-player mode</label>
         <label><input type="checkbox" checked={s.showThreats} onChange={(e) => updateSetting("showThreats", e.target.checked)} /> Show threatened pieces (learn mode)</label>
+        <label><input type="checkbox" checked={s.explodeOnCapture} onChange={(e) => updateSetting("explodeOnCapture", e.target.checked)} /> 💥 Explode pieces on capture</label>
       </section>
     </div>
   );

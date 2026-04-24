@@ -2,13 +2,13 @@ import type { BoardTheme, PieceSet } from "../engine/storage";
 import { useGame } from "../GameContext";
 
 const THEMES: BoardTheme[] = ["wood", "blue", "green", "neon"];
-const SETS: PieceSet[] = ["classic", "modern", "neon"];
+const SETS: PieceSet[] = ["classic", "modern", "neon", "emoji"];
 
 const THEME_LABEL: Record<BoardTheme, string> = {
   wood: "🪵", blue: "🟦", green: "🟩", neon: "✨"
 };
 const SET_LABEL: Record<PieceSet, string> = {
-  classic: "♚", modern: "♟︎", neon: "💎"
+  classic: "♚", modern: "♟︎", neon: "💎", emoji: "🦄"
 };
 
 export function LookPicker() {

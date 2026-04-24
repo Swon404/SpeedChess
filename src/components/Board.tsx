@@ -106,6 +106,17 @@ export function Board({ flipped = false }: Props) {
                       <Piece color={piece.color} type={piece.type} set={pieceSet} />
                     </span>
                   )}
+                  {isLastTo && lastMove?.captured && store.settings.explodeOnCapture && (
+                    <span key={`boom-${moveIndex}`} className="boom" aria-hidden="true">
+                      <span className="boom-core">💥</span>
+                      <span className="boom-bit b1">✨</span>
+                      <span className="boom-bit b2">⭐</span>
+                      <span className="boom-bit b3">💫</span>
+                      <span className="boom-bit b4">🔥</span>
+                      <span className="boom-bit b5">✨</span>
+                      <span className="boom-bit b6">⭐</span>
+                    </span>
+                  )}
                 </button>
               );
             })}

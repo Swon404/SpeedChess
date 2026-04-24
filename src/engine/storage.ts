@@ -24,7 +24,7 @@ export interface ProfileStats {
 }
 
 export type BoardTheme = "wood" | "blue" | "green" | "neon";
-export type PieceSet = "classic" | "modern" | "neon";
+export type PieceSet = "classic" | "modern" | "neon" | "emoji";
 
 export interface Settings {
   activeProfileId: string | null;
@@ -35,6 +35,7 @@ export interface Settings {
   haptics: boolean;
   autoFlip: boolean;
   showThreats: boolean;
+  explodeOnCapture: boolean;
 }
 
 export interface SavedGame {
@@ -60,7 +61,8 @@ const DEFAULT_SETTINGS: Settings = {
   sound: true,
   haptics: true,
   autoFlip: true,
-  showThreats: false
+  showThreats: false,
+  explodeOnCapture: false
 };
 
 function emptyStats(): ProfileStats {
