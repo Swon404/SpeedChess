@@ -112,6 +112,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [hint, setHint] = useState<Move | null>(null);
   const stateRef = useRef(state);
   useEffect(() => { stateRef.current = state; }, [state]);
+  // Track latest store for callbacks that need the freshest settings.
+  const storeRef = useRef(store);
+  useEffect(() => { storeRef.current = store; }, [store]);
 
   const activeProfile = useMemo(
     () => store.profiles.find((p) => p.id === store.settings.activeProfileId) ?? null,
@@ -311,6 +314,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setPlayers({ w: p?.w ?? defaultW, b: p?.b ?? defaultB });
     dispatch({ type: "new", initial: initialState() });
     setSelected(null);
+    // Force the clock to use the freshest timer setting — the caller often
+    // updates settings immediately before calling newGame (e.g. the New Game
+    // screen), so reading storeRef gives us the value they just picked
+    // instead of the stale closure-captured one.
+    const t = storeRef.current.settings.timerSeconds;
+    setTimeLeft(t > 0 ? t : Infinity);
   }, [activeProfile]);
 
   const forfeit = useCallback(() => dispatch({ type: "forfeit" }), []);
@@ -361,6 +370,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const updated = cloneStore(store);
     updateSettings(updated, { [key]: value } as Partial<Settings>);
     setStore(updated);
+    // Keep ref in sync immediately so any synchronous code that runs right
+    // after this (e.g. New Game screen's Start button: updateSetting → newGame)
+    // sees the freshest settings.
+    storeRef.current = updated;
   }, [store]);
 
   const value: GameCtx = {
