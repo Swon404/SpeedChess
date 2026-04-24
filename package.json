@@ -7,12 +7,14 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "import-puzzles": "tsx scripts/import-puzzles.mjs"
   },
   "devDependencies": {
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "tsx": "^4.19.2",
     "typescript": "~6.0.2",
     "vite": "^8.0.4",
     "vitest": "^3.2.4"
