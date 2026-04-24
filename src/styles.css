@@ -242,7 +242,21 @@ section label { display: block; margin: 6px 0; }
   display: flex;
   gap: 8px;
   margin-bottom: 8px;
+  align-items: stretch;
 }
+.timer-control {
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 10px;
+  padding: 0 14px;
+  color: var(--text-dim, #cbd5e1);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.timer-control.on { color: var(--accent); border-color: var(--accent); }
+.timer-control.off { border-style: dashed; }
+.timer-control:hover { filter: brightness(1.2); }
 .clock-side {
   flex: 1;
   background: var(--panel);
