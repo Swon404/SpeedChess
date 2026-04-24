@@ -15,12 +15,14 @@ import {
 } from "./engine/storage";
 
 type Mode = { kind: "two-player" } | { kind: "bot"; level: number };
+export interface Players { w: string; b: string; }
 
 interface GameCtx {
   store: Store;
   activeProfile: Profile | null;
   state: GameState;
   mode: Mode;
+  players: Players;
   selected: Square | null;
   legalFromSelected: Move[];
   timeLeft: number; // seconds remaining for current move (Infinity if off)
@@ -30,7 +32,7 @@ interface GameCtx {
   select(sq: Square | null): void;
   tryMove(from: Square, to: Square, promotion?: "Q" | "R" | "B" | "N"): boolean;
   undo(): void;
-  newGame(mode: Mode, players?: { w?: string; b?: string }): void;
+  newGame(mode: Mode, players?: Partial<Players>): void;
   forfeit(): void;
 
   // profile & settings
@@ -79,6 +81,7 @@ function reducer(stack: GameState[], action: Action): GameState[] {
 export function GameProvider({ children }: { children: ReactNode }) {
   const [store, setStore] = useState<Store>(() => load());
   const [mode, setMode] = useState<Mode>({ kind: "two-player" });
+  const [players, setPlayers] = useState<Players>({ w: "White", b: "Black" });
   const [stack, dispatch] = useReducer(reducer, undefined, () => [initialState()]);
   const state = stack[stack.length - 1];
   const [selected, setSelected] = useState<Square | null>(null);
@@ -141,17 +144,26 @@ export function GameProvider({ children }: { children: ReactNode }) {
     if (result.kind === "ongoing") return;
     if (recordedRef.current === stack.length) return;
     recordedRef.current = stack.length;
-    if (!activeProfile) return;
-    if (mode.kind !== "bot") return;
-    let outcome: "win" | "loss" | "draw" = "draw";
-    if (result.kind === "checkmate") {
-      outcome = result.winner === "w" ? "win" : "loss";
-    }
+    const winner = result.kind === "checkmate" ? result.winner : null;
     const updated = cloneStore(store);
-    recordResult(updated, activeProfile.id, { kind: "bot", level: mode.level }, outcome);
-    saveActiveGame(updated, activeProfile.id, null);
+    if (mode.kind === "bot") {
+      if (!activeProfile) return;
+      const outcome: "win" | "loss" | "draw" =
+        winner === null ? "draw" : winner === "w" ? "win" : "loss";
+      recordResult(updated, activeProfile.id, { kind: "bot", level: mode.level }, outcome);
+      saveActiveGame(updated, activeProfile.id, null);
+    } else {
+      // two-player: record vs each named profile if found
+      const wProf = updated.profiles.find((p) => p.name === players.w);
+      const bProf = updated.profiles.find((p) => p.name === players.b);
+      const wOutcome: "win" | "loss" | "draw" = winner === null ? "draw" : winner === "w" ? "win" : "loss";
+      const bOutcome: "win" | "loss" | "draw" = winner === null ? "draw" : winner === "b" ? "win" : "loss";
+      if (wProf) recordResult(updated, wProf.id, { kind: "human" }, wOutcome);
+      if (bProf) recordResult(updated, bProf.id, { kind: "human" }, bOutcome);
+      if (activeProfile) saveActiveGame(updated, activeProfile.id, null);
+    }
     setStore(updated);
-  }, [result, mode, activeProfile, store, stack.length]);
+  }, [result, mode, activeProfile, store, stack.length, players]);
 
   // Persist active game
   useEffect(() => {
@@ -162,7 +174,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       state,
       mode: mode.kind === "bot" ? "bot" : "two-player",
       botLevel: mode.kind === "bot" ? mode.level : undefined,
-      players: { w: activeProfile.name, b: mode.kind === "bot" ? `Bot Lv ${mode.level}` : "Player 2" },
+      players: { w: players.w, b: players.b },
       timerSeconds: store.settings.timerSeconds,
       startedAt: Date.now()
     });
@@ -204,11 +216,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setSelected(null);
   }, [mode]);
 
-  const newGame = useCallback((m: Mode) => {
+  const newGame = useCallback((m: Mode, p?: Partial<Players>) => {
     setMode(m);
+    const defaultW = activeProfile?.name ?? "White";
+    const defaultB = m.kind === "bot" ? `Bot Lv ${m.level}` : "Player 2";
+    setPlayers({ w: p?.w ?? defaultW, b: p?.b ?? defaultB });
     dispatch({ type: "new", initial: initialState() });
     setSelected(null);
-  }, []);
+  }, [activeProfile]);
 
   const forfeit = useCallback(() => dispatch({ type: "forfeit" }), []);
 
@@ -244,7 +259,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [store]);
 
   const value: GameCtx = {
-    store, activeProfile, state, mode, selected, legalFromSelected, timeLeft, isBotThinking, result,
+    store, activeProfile, state, mode, players, selected, legalFromSelected, timeLeft, isBotThinking, result,
     select, tryMove, undo, newGame, forfeit,
     setActiveProfile, addProfile, removeProfile, renamePlayer, updateSetting
   };

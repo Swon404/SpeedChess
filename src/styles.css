@@ -221,6 +221,16 @@ section label { display: block; margin: 6px 0; }
   border-radius: 10px;
 }
 
+.name-input {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid #334155;
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 1rem;
+}
+
 .profile-list { list-style: none; padding: 0; }
 .profile-list li {
   background: var(--panel);

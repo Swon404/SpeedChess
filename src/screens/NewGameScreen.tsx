@@ -4,15 +4,38 @@ import { useGame } from "../GameContext";
 
 export function NewGameScreen() {
   const nav = useNavigate();
-  const { newGame, store, updateSetting } = useGame();
+  const { newGame, store, updateSetting, addProfile, setActiveProfile, activeProfile } = useGame();
   const [kind, setKind] = useState<"two-player" | "bot">("bot");
   const [level, setLevel] = useState<number>(1);
   const [timer, setTimer] = useState<number>(store.settings.timerSeconds);
+  const [whiteName, setWhiteName] = useState<string>(activeProfile?.name ?? "");
+  const [blackName, setBlackName] = useState<string>("");
+
+  const ensureProfile = (name: string): string => {
+    const trimmed = name.trim();
+    if (!trimmed) return "";
+    const existing = store.profiles.find(
+      (p) => p.name.toLowerCase() === trimmed.toLowerCase()
+    );
+    if (existing) return existing.name;
+    const created = addProfile(trimmed);
+    return created.name;
+  };
 
   const start = () => {
     updateSetting("timerSeconds", timer);
-    if (kind === "two-player") newGame({ kind: "two-player" });
-    else newGame({ kind: "bot", level });
+
+    // Ensure white profile exists and is active — stats are tied to this name
+    const w = ensureProfile(whiteName || "Player 1");
+    const wProf = store.profiles.find((p) => p.name.toLowerCase() === w.toLowerCase());
+    if (wProf) setActiveProfile(wProf.id);
+
+    if (kind === "two-player") {
+      const b = ensureProfile(blackName || "Player 2");
+      newGame({ kind: "two-player" }, { w, b });
+    } else {
+      newGame({ kind: "bot", level }, { w, b: `Bot Lv ${level}` });
+    }
     nav("/play");
   };
 
@@ -26,6 +49,51 @@ export function NewGameScreen() {
         <label><input type="radio" checked={kind === "bot"} onChange={() => setKind("bot")} /> Play the bot</label>
         <label><input type="radio" checked={kind === "two-player"} onChange={() => setKind("two-player")} /> Two players (pass & play)</label>
       </section>
+
+      <section>
+        <h3>♙ White player</h3>
+        <input
+          className="name-input"
+          type="text"
+          placeholder="Enter name"
+          value={whiteName}
+          onChange={(e) => setWhiteName(e.target.value)}
+          maxLength={24}
+        />
+        {store.profiles.length > 0 && (
+          <div className="difficulty" style={{ marginTop: 6 }}>
+            {store.profiles.map((p) => (
+              <button key={p.id}
+                className={p.name === whiteName ? "pill active" : "pill"}
+                onClick={() => setWhiteName(p.name)}>{p.name}</button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {kind === "two-player" && (
+        <section>
+          <h3>♟ Black player</h3>
+          <input
+            className="name-input"
+            type="text"
+            placeholder="Enter name"
+            value={blackName}
+            onChange={(e) => setBlackName(e.target.value)}
+            maxLength={24}
+          />
+          {store.profiles.length > 0 && (
+            <div className="difficulty" style={{ marginTop: 6 }}>
+              {store.profiles.map((p) => (
+                <button key={p.id}
+                  className={p.name === blackName ? "pill active" : "pill"}
+                  onClick={() => setBlackName(p.name)}>{p.name}</button>
+              ))}
+            </div>
+          )}
+          <p className="hint">New names are saved as profiles so stats track over time.</p>
+        </section>
+      )}
 
       {kind === "bot" && (
         <section>
