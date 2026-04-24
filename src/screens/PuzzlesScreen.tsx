@@ -6,7 +6,7 @@ import {
   PUZZLES, filterPuzzles, puzzleDifficulty,
   type Puzzle, type Difficulty
 } from "../puzzles/puzzles";
-import { recordPuzzleSolved } from "../engine/storage";
+import { recordPuzzleAttempt, recordPuzzleSolved } from "../engine/storage";
 import { parseUci } from "../engine/board";
 
 type Status = "solving" | "wrong" | "solved";
@@ -23,32 +23,73 @@ export function PuzzlesScreen() {
   const { loadPosition, state, tryMove, store, activeProfile } = useGame();
   const [difficulty, setDifficulty] = useState<Difficulty | "all">("easy");
   const [mateIn, setMateIn] = useState<MateFilter>("all");
+  const [newOnly, setNewOnly] = useState(true);
   const [index, setIndex] = useState(0);
   const [status, setStatus] = useState<Status>("solving");
   const [playedPlies, setPlayedPlies] = useState(0);
   const baselineHistoryRef = useRef(0);
+  const attemptedRef = useRef<string | null>(null);
 
-  const pool = useMemo(
+  const progress = activeProfile?.stats.puzzleProgress ?? {};
+  const solvedIds = useMemo(
+    () => new Set(Object.keys(progress).filter((id) => progress[id]?.solved)),
+    [progress]
+  );
+
+  const basePool = useMemo(
     () => filterPuzzles({ mateIn, difficulty }),
     [mateIn, difficulty]
   );
+  const pool = useMemo(() => {
+    if (!newOnly) return basePool;
+    const unsolved = basePool.filter((p) => !solvedIds.has(p.id));
+    return unsolved.length > 0 ? unsolved : basePool;
+  }, [basePool, newOnly, solvedIds]);
+
   const puzzle: Puzzle | undefined = pool[index];
   const totalSolved = activeProfile?.stats.puzzlesSolved ?? 0;
 
-  // Reset index when filter changes.
-  useEffect(() => { setIndex(0); }, [mateIn, difficulty]);
+  const diffCounts = useMemo(() => {
+    const out: Record<Difficulty | "all", { solved: number; total: number }> = {
+      all: { solved: 0, total: PUZZLES.length },
+      easy: { solved: 0, total: 0 },
+      medium: { solved: 0, total: 0 },
+      hard: { solved: 0, total: 0 }
+    };
+    for (const p of PUZZLES) {
+      const band = puzzleDifficulty(p);
+      out[band].total++;
+      if (solvedIds.has(p.id)) { out[band].solved++; out.all.solved++; }
+    }
+    return out;
+  }, [solvedIds]);
 
-  // Load the current puzzle.
+  const mateCounts = useMemo(() => {
+    const out: Record<"all" | 1 | 2 | 3, { solved: number; total: number }> = {
+      all: { solved: 0, total: 0 }, 1: { solved: 0, total: 0 },
+      2: { solved: 0, total: 0 }, 3: { solved: 0, total: 0 }
+    };
+    for (const p of PUZZLES) {
+      if (difficulty !== "all" && puzzleDifficulty(p) !== difficulty) continue;
+      const m = p.mateIn();
+      out[m].total++; out.all.total++;
+      if (solvedIds.has(p.id)) { out[m].solved++; out.all.solved++; }
+    }
+    return out;
+  }, [solvedIds, difficulty]);
+
+  useEffect(() => { setIndex(0); }, [mateIn, difficulty, newOnly]);
+
   useEffect(() => {
     if (!puzzle) return;
     loadPosition(puzzle.setup(), { w: "You", b: "Puzzle" });
     baselineHistoryRef.current = 0;
     setStatus("solving");
     setPlayedPlies(0);
+    attemptedRef.current = null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [puzzle?.id]);
 
-  // Validate each new move and play the scripted opponent reply.
   useEffect(() => {
     if (!puzzle) return;
     if (status !== "solving") return;
@@ -64,17 +105,23 @@ export function PuzzlesScreen() {
       last.to.file === to.file && last.to.rank === to.rank &&
       (!promotion || last.promotion === promotion);
 
-    if (!ok) { setStatus("wrong"); return; }
+    if (!ok) {
+      setStatus("wrong");
+      if (attemptedRef.current !== puzzle.id) {
+        recordPuzzleAttempt(store, activeProfile?.id ?? null, puzzle.id);
+        attemptedRef.current = puzzle.id;
+      }
+      return;
+    }
 
     const nextIdx = plyIndex + 1;
     if (nextIdx >= puzzle.moves.length) {
       setStatus("solved");
-      recordPuzzleSolved(store, activeProfile?.id ?? null);
+      recordPuzzleSolved(store, activeProfile?.id ?? null, puzzle.id);
       setPlayedPlies(moved);
       return;
     }
 
-    // Play opponent reply after a short beat so user's move animates first.
     setPlayedPlies(moved);
     const reply = parseUci(puzzle.moves[nextIdx]);
     const t = setTimeout(() => {
@@ -98,30 +145,39 @@ export function PuzzlesScreen() {
   const next = () => setIndex((i) => (i + 1) % Math.max(1, pool.length));
   const prev = () => setIndex((i) => (i - 1 + Math.max(1, pool.length)) % Math.max(1, pool.length));
 
+  const entry = puzzle ? progress[puzzle.id] : undefined;
+  const alreadySolved = !!entry?.solved;
+
   const banner = useMemo(() => {
     if (!puzzle) return null;
     if (status === "solved") return <div className="puzzle-banner good">✅ Solved! Great job.</div>;
     if (status === "wrong") return <div className="puzzle-banner bad">❌ Not quite — tap Retry.</div>;
     const side = puzzle.setup().turn === "w" ? "White" : "Black";
-    return <div className="puzzle-banner">You play {side}. Mate in {puzzle.mateIn()} — find the forced win.</div>;
-  }, [status, puzzle]);
+    const done = alreadySolved ? " (already solved ✓)" : "";
+    return <div className="puzzle-banner">You play {side}. Mate in {puzzle.mateIn()} — find the forced win.{done}</div>;
+  }, [status, puzzle, alreadySolved]);
+
+  const allSolvedHere = basePool.length > 0 && basePool.every((p) => solvedIds.has(p.id));
 
   return (
     <div className="screen">
       <div className="topbar">
         <Link to="/">← Home</Link>
-        <span className="muted">Solved: {totalSolved}</span>
+        <span className="muted">Solved: {totalSolved} / {PUZZLES.length}</span>
       </div>
       <h2>🧩 Puzzles</h2>
 
       <div className="puzzle-tabs">
         <span className="tabs-label">Difficulty</span>
-        {(["easy", "medium", "hard", "all"] as const).map((d) => (
-          <button key={d}
-            className={difficulty === d ? "pill active" : "pill"}
-            onClick={() => setDifficulty(d)}
-          >{DIFF_LABEL[d]} ({PUZZLES.filter((p) => d === "all" || puzzleDifficulty(p) === d).length})</button>
-        ))}
+        {(["easy", "medium", "hard", "all"] as const).map((d) => {
+          const c = diffCounts[d];
+          return (
+            <button key={d}
+              className={difficulty === d ? "pill active" : "pill"}
+              onClick={() => setDifficulty(d)}
+            >{DIFF_LABEL[d]} ({c.solved}/{c.total})</button>
+          );
+        })}
       </div>
 
       <div className="puzzle-tabs">
@@ -131,12 +187,28 @@ export function PuzzlesScreen() {
           { key: 1 as MateFilter, label: "Mate in 1" },
           { key: 2 as MateFilter, label: "Mate in 2" },
           { key: 3 as MateFilter, label: "Mate in 3" }
-        ]).map((it) => (
-          <button key={String(it.key)}
-            className={mateIn === it.key ? "pill active" : "pill"}
-            onClick={() => setMateIn(it.key)}
-          >{it.label}</button>
-        ))}
+        ]).map((it) => {
+          const c = mateCounts[it.key];
+          return (
+            <button key={String(it.key)}
+              className={mateIn === it.key ? "pill active" : "pill"}
+              onClick={() => setMateIn(it.key)}
+            >{it.label} ({c.solved}/{c.total})</button>
+          );
+        })}
+      </div>
+
+      <div className="puzzle-tabs">
+        <label className="pill" style={{ cursor: "pointer" }}>
+          <input type="checkbox" checked={newOnly} onChange={(e) => setNewOnly(e.target.checked)}
+            style={{ marginRight: 6, verticalAlign: "middle" }} />
+          New puzzles only
+        </label>
+        {allSolvedHere && newOnly && (
+          <span className="muted" style={{ fontSize: "0.8rem", alignSelf: "center" }}>
+            🎉 All solved in this filter — showing review pool.
+          </span>
+        )}
       </div>
 
       {!puzzle ? (
@@ -147,6 +219,8 @@ export function PuzzlesScreen() {
             <span className="pill">Mate in {puzzle.mateIn()}</span>
             <span className="pill">{DIFF_LABEL[puzzleDifficulty(puzzle)]}</span>
             {puzzle.rating !== undefined && <span className="pill">⚡ {puzzle.rating}</span>}
+            {alreadySolved && <span className="pill" style={{ color: "#4ade80" }}>✓ Solved</span>}
+            {entry && entry.attempts > 0 && <span className="pill">Tries: {entry.attempts}</span>}
           </div>
           {banner}
           <Board flipped={puzzle.setup().turn === "b"} />

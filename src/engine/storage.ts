@@ -19,6 +19,8 @@ export interface ProfileStats {
   puzzlesSolved: number;
   streak: number;
   badges: string[];
+  /** Per-puzzle attempt + completion record, keyed by puzzle id. */
+  puzzleProgress?: Record<string, { solved: boolean; attempts: number; solvedAt?: number }>;
 }
 
 export type BoardTheme = "wood" | "blue" | "green" | "neon";
@@ -64,7 +66,8 @@ const DEFAULT_SETTINGS: Settings = {
 function emptyStats(): ProfileStats {
   return {
     wins: 0, losses: 0, draws: 0, rating: 800,
-    byBotLevel: {}, puzzlesSolved: 0, streak: 0, badges: []
+    byBotLevel: {}, puzzlesSolved: 0, streak: 0, badges: [],
+    puzzleProgress: {}
   };
 }
 
@@ -170,12 +173,42 @@ export function saveActiveGame(store: Store, profileId: string, game: SavedGame 
   save(store);
 }
 
-export function recordPuzzleSolved(store: Store, profileId: string | null): void {
+export function recordPuzzleSolved(
+  store: Store,
+  profileId: string | null,
+  puzzleId?: string
+): void {
   if (!profileId) return;
   const p = store.profiles.find((x) => x.id === profileId);
   if (!p) return;
-  p.stats.puzzlesSolved++;
+  const progress = (p.stats.puzzleProgress ??= {});
+  if (puzzleId) {
+    const entry = progress[puzzleId] ?? { solved: false, attempts: 0 };
+    entry.attempts++;
+    const firstTime = !entry.solved;
+    entry.solved = true;
+    entry.solvedAt = Date.now();
+    progress[puzzleId] = entry;
+    if (firstTime) p.stats.puzzlesSolved++;
+  } else {
+    p.stats.puzzlesSolved++;
+  }
   awardBadges(p);
+  save(store);
+}
+
+export function recordPuzzleAttempt(
+  store: Store,
+  profileId: string | null,
+  puzzleId: string
+): void {
+  if (!profileId) return;
+  const p = store.profiles.find((x) => x.id === profileId);
+  if (!p) return;
+  const progress = (p.stats.puzzleProgress ??= {});
+  const entry = progress[puzzleId] ?? { solved: false, attempts: 0 };
+  entry.attempts++;
+  progress[puzzleId] = entry;
   save(store);
 }
 
