@@ -169,14 +169,14 @@ export function PuzzlesScreen() {
       <h2>🧩 Puzzles</h2>
 
       <div className="puzzle-tabs">
-        <span className="tabs-label">Difficulty</span>
+        <span className="tabs-label">Level</span>
         {(["beginner", "easy", "medium", "hard", "all"] as const).map((d) => {
           const c = diffCounts[d];
           return (
             <button key={d}
               className={difficulty === d ? "pill active" : "pill"}
               onClick={() => setDifficulty(d)}
-            >{DIFF_LABEL[d]} ({c.solved}/{c.total})</button>
+            >{DIFF_LABEL[d]}<span className="count">{c.solved}/{c.total}</span></button>
           );
         })}
       </div>
@@ -185,45 +185,41 @@ export function PuzzlesScreen() {
         <span className="tabs-label">Type</span>
         {([
           { key: "all" as MateFilter, label: "All" },
-          { key: 1 as MateFilter, label: "Mate in 1" },
-          { key: 2 as MateFilter, label: "Mate in 2" },
-          { key: 3 as MateFilter, label: "Mate in 3" }
+          { key: 1 as MateFilter, label: "M1" },
+          { key: 2 as MateFilter, label: "M2" },
+          { key: 3 as MateFilter, label: "M3" }
         ]).map((it) => {
           const c = mateCounts[it.key];
           return (
             <button key={String(it.key)}
               className={mateIn === it.key ? "pill active" : "pill"}
               onClick={() => setMateIn(it.key)}
-            >{it.label} ({c.solved}/{c.total})</button>
+            >{it.label}<span className="count">{c.solved}/{c.total}</span></button>
           );
         })}
+        <label className="pill toggle" style={{ cursor: "pointer", marginLeft: "auto" }}>
+          <input type="checkbox" checked={newOnly} onChange={(e) => setNewOnly(e.target.checked)} />
+          New only
+        </label>
       </div>
 
-      <div className="puzzle-tabs">
-        <label className="pill" style={{ cursor: "pointer" }}>
-          <input type="checkbox" checked={newOnly} onChange={(e) => setNewOnly(e.target.checked)}
-            style={{ marginRight: 6, verticalAlign: "middle" }} />
-          New puzzles only
-        </label>
-        {allSolvedHere && newOnly && (
-          <span className="muted" style={{ fontSize: "0.8rem", alignSelf: "center" }}>
-            🎉 All solved in this filter — showing review pool.
-          </span>
-        )}
-      </div>
+      {allSolvedHere && newOnly && (
+        <p className="hint" style={{ margin: "4px 0 8px" }}>
+          🎉 All solved at this level — showing review pool.
+        </p>
+      )}
 
       {!puzzle ? (
         <p className="hint">No puzzles match this filter yet. Try a different combo.</p>
       ) : (
         <>
+          {banner}
           <div className="puzzle-meta">
-            <span className="pill">Mate in {puzzle.mateIn()}</span>
-            <span className="pill">{DIFF_LABEL[puzzleDifficulty(puzzle)]}</span>
+            <span>Puzzle {index + 1} / {pool.length}</span>
             {puzzle.rating !== undefined && <span className="pill">⚡ {puzzle.rating}</span>}
-            {alreadySolved && <span className="pill" style={{ color: "#4ade80" }}>✓ Solved</span>}
+            {alreadySolved && <span className="pill solved">✓ Solved</span>}
             {entry && entry.attempts > 0 && <span className="pill">Tries: {entry.attempts}</span>}
           </div>
-          {banner}
           <Board flipped={puzzle.setup().turn === "b"} />
           <div className="buttons puzzle-controls">
             <button onClick={prev}>← Previous</button>
@@ -232,7 +228,6 @@ export function PuzzlesScreen() {
               ? <button className="primary" onClick={next}>Next →</button>
               : <button onClick={next}>Skip →</button>}
           </div>
-          <p className="hint">Puzzle {index + 1} of {pool.length}</p>
         </>
       )}
     </div>
