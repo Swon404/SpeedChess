@@ -162,22 +162,27 @@ export function GameProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     setIsBotThinking(true);
     (async () => {
-      // Compute the bot move and ensure at least ~300ms have elapsed so the
-      // human's own sliding animation has time to play before the board
-      // re-renders with the bot's response.
-      const minThinkMs = 320;
-      const t0 = performance.now();
-      const move = await chooseBotMove(state, mode.level);
-      const elapsed = performance.now() - t0;
-      if (elapsed < minThinkMs) {
-        await new Promise((r) => setTimeout(r, minThinkMs - elapsed));
+      try {
+        // Compute the bot move and ensure at least ~300ms have elapsed so the
+        // human's own sliding animation has time to play before the board
+        // re-renders with the bot's response.
+        const minThinkMs = 320;
+        const t0 = performance.now();
+        const move = await chooseBotMove(state, mode.level);
+        const elapsed = performance.now() - t0;
+        if (elapsed < minThinkMs) {
+          await new Promise((r) => setTimeout(r, minThinkMs - elapsed));
+        }
+        if (cancelled) return;
+        if (move) {
+          const san = toSAN(state, move);
+          dispatch({ type: "make", move, san });
+        }
+      } finally {
+        // Always clear the thinking flag so the timer can resume ticking on
+        // the human's next turn, even if this effect was cancelled mid-flight.
+        setIsBotThinking(false);
       }
-      if (cancelled) return;
-      if (move) {
-        const san = toSAN(state, move);
-        dispatch({ type: "make", move, san });
-      }
-      setIsBotThinking(false);
     })();
     return () => { cancelled = true; };
   }, [state, mode, result.kind]);
