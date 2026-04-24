@@ -1,27 +1,11 @@
 import type { Color, PieceType } from "../engine/board";
 import type { PieceSet } from "../engine/storage";
 import { PieceSVG } from "./PieceSVG";
+import { MinecraftPiece } from "./MinecraftPieces";
 
 const GLYPH: Record<string, string> = {
-  wK: "♔", wQ: "♕", wR: "♖", wB: "♗", wN: "♘", wP: "♙",
-  bK: "♚", bQ: "♛", bR: "♜", bB: "♝", bN: "♞", bP: "♟"
-};
-
-const EMOJI: Record<string, string> = {
-  // Minecraft: heroes (white)
-  wK: "👦",    // Steve
-  wQ: "👧",    // Alex
-  wR: "🗿",    // Iron Golem (moai stand-in)
-  wB: "🧙",    // Villager / Wizard
-  wN: "🐺",    // Wolf
-  wP: "🐔",    // Chicken
-  // Minecraft: mobs (black)
-  bK: "🐉",    // Ender Dragon
-  bQ: "�\u200d♀️",  // Witch
-  bR: "🧨",    // Creeper -> TNT
-  bB: "👻",    // Enderman -> Ghost
-  bN: "💀",    // Skeleton
-  bP: "🧟"     // Zombie
+  wK: "\u2654", wQ: "\u2655", wR: "\u2656", wB: "\u2657", wN: "\u2658", wP: "\u2659",
+  bK: "\u265A", bQ: "\u265B", bR: "\u265C", bB: "\u265D", bN: "\u265E", bP: "\u265F"
 };
 
 interface Props {
@@ -40,8 +24,8 @@ export function Piece({ color, type, set }: Props) {
   }
   if (set === "emoji") {
     return (
-      <span className={`piece-emoji piece-${color}`}>
-        {EMOJI[color + type]}
+      <span className={`piece-mc piece-${color}`}>
+        <MinecraftPiece color={color} type={type} />
       </span>
     );
   }
