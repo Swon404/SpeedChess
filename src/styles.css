@@ -457,3 +457,28 @@ section label { display: block; margin: 6px 0; }
 .puzzle-banner.bad { background: rgba(239,68,68,0.18); color: #fca5a5; border: 1px solid rgba(239,68,68,0.5); }
 .puzzle-controls { margin: 10px 0; justify-content: space-between; }
 .topbar .muted { color: #94a3b8; font-size: 0.9rem; }
+
+.board-wrap { position: relative; }
+.pause-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.pause-card {
+  background: var(--panel, #1e293b);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  border-radius: 14px;
+  padding: 22px 32px;
+  text-align: center;
+  color: var(--text, #f1f5f9);
+  display: flex; flex-direction: column; gap: 6px; align-items: center;
+}
+.pause-icon { font-size: 3rem; line-height: 1; }
+.pause-card small { color: #94a3b8; }

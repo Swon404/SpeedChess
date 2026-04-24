@@ -1,10 +1,12 @@
 import { useGame } from "../GameContext";
 
 export function Controls() {
-  const { undo, newGame, mode, result, state, requestHint, hint, clearHint } = useGame();
+  const { undo, newGame, mode, result, state, requestHint, hint, clearHint, paused, togglePause } = useGame();
   const statusText =
     result.kind === "ongoing"
-      ? `${state.turn === "w" ? "White" : "Black"} to move`
+      ? paused
+        ? "⏸ Paused"
+        : `${state.turn === "w" ? "White" : "Black"} to move`
       : result.kind === "checkmate"
       ? `Checkmate — ${result.winner === "w" ? "White" : "Black"} wins`
       : result.kind === "stalemate"
@@ -22,8 +24,15 @@ export function Controls() {
       <div className="status">{statusText}</div>
       <div className="buttons">
         <button
-          onClick={() => (hint ? clearHint() : requestHint())}
+          onClick={togglePause}
           disabled={!ongoing}
+          title={paused ? "Resume the game" : "Pause the clock"}
+        >
+          {paused ? "▶ Resume" : "⏸ Pause"}
+        </button>
+        <button
+          onClick={() => (hint ? clearHint() : requestHint())}
+          disabled={!ongoing || paused}
           title="Show a suggested move"
         >
           {hint ? "Hide hint" : "💡 Hint"}

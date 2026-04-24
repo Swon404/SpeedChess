@@ -8,7 +8,7 @@ import { MoveList } from "../components/MoveList";
 import { useGame } from "../GameContext";
 
 export function GameScreen() {
-  const { mode, state, store } = useGame();
+  const { mode, state, store, paused, togglePause } = useGame();
   const flipped =
     mode.kind === "two-player" && store.settings.autoFlip && state.turn === "b";
 
@@ -20,7 +20,18 @@ export function GameScreen() {
       </div>
       <Clock />
       <LookPicker />
-      <Board flipped={flipped} />
+      <div className="board-wrap">
+        <Board flipped={flipped} />
+        {paused && (
+          <button className="pause-overlay" onClick={togglePause} title="Tap to resume">
+            <div className="pause-card">
+              <div className="pause-icon">⏸</div>
+              <div>Paused</div>
+              <small>Tap to resume</small>
+            </div>
+          </button>
+        )}
+      </div>
       <Controls />
       <MoveList />
       <GameOverModal />

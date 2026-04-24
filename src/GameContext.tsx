@@ -31,6 +31,9 @@ interface GameCtx {
   isBotThinking: boolean;
   result: ReturnType<typeof gameResult>;
 
+  paused: boolean;
+  togglePause(): void;
+
   select(sq: Square | null): void;
   tryMove(from: Square, to: Square, promotion?: "Q" | "R" | "B" | "N"): boolean;
   undo(): void;
@@ -110,6 +113,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   });
   const [isBotThinking, setIsBotThinking] = useState(false);
   const [hint, setHint] = useState<Move | null>(null);
+  const [paused, setPaused] = useState(false);
   const stateRef = useRef(state);
   useEffect(() => { stateRef.current = state; }, [state]);
   // Track latest store for callbacks that need the freshest settings.
@@ -184,6 +188,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   // Tick timer
   useEffect(() => {
     if (result.kind !== "ongoing") return;
+    if (paused) return;
     if (!Number.isFinite(timeLeft)) return;
     if (isBotThinking) return;
     if (timeLeft <= 0) {
@@ -192,12 +197,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
     const id = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
     return () => clearTimeout(id);
-  }, [timeLeft, isBotThinking, result.kind]);
+  }, [timeLeft, isBotThinking, result.kind, paused]);
 
   // Bot move
   useEffect(() => {
     if (mode.kind !== "bot") return;
     if (result.kind !== "ongoing") return;
+    if (paused) return;
     // Bot plays black by default
     if (state.turn !== "b") return;
     let cancelled = false;
@@ -226,7 +232,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       }
     })();
     return () => { cancelled = true; };
-  }, [state, mode, result.kind]);
+  }, [state, mode, result.kind, paused]);
 
   // Auto-record result when game ends
   const recordedRef = useRef<number>(-1);
@@ -285,6 +291,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [state]);
 
   const tryMove = useCallback((from: Square, to: Square, promotion?: "Q" | "R" | "B" | "N"): boolean => {
+    if (paused) return false;
     const candidates = legalMovesFrom(state, from).filter(
       (m) => m.to.file === to.file && m.to.rank === to.rank
     );
@@ -297,7 +304,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "make", move, san });
     setSelected(null);
     return true;
-  }, [state]);
+  }, [state, paused]);
 
   const undo = useCallback(() => {
     // Undo twice if playing a bot and it's the human's turn (to remove bot reply + own move).
@@ -314,6 +321,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setPlayers({ w: p?.w ?? defaultW, b: p?.b ?? defaultB });
     dispatch({ type: "new", initial: initialState() });
     setSelected(null);
+    setPaused(false);
     // Force the clock to use the freshest timer setting — the caller often
     // updates settings immediately before calling newGame (e.g. the New Game
     // screen), so reading storeRef gives us the value they just picked
@@ -331,6 +339,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "set-state", state: newState });
     setSelected(null);
     setHint(null);
+    setPaused(false);
+  }, []);
+
+  const togglePause = useCallback(() => {
+    setPaused((p) => !p);
   }, []);
 
   const requestHint = useCallback(() => {
@@ -378,6 +391,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const value: GameCtx = {
     store, activeProfile, state, mode, players, selected, legalFromSelected, timeLeft, isBotThinking, result,
+    paused, togglePause,
     select, tryMove, undo, newGame, forfeit,
     loadPosition,
     hint, requestHint, clearHint,
