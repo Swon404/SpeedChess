@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Board } from "../components/Board";
 import { Clock } from "../components/Clock";
 import { Controls } from "../components/Controls";
+import { GameOverModal } from "../components/GameOverModal";
 import { LookPicker } from "../components/LookPicker";
 import { MoveList } from "../components/MoveList";
 import { useGame } from "../GameContext";
@@ -22,6 +23,7 @@ export function GameScreen() {
       <Board flipped={flipped} />
       <Controls />
       <MoveList />
+      <GameOverModal />
     </div>
   );
 }

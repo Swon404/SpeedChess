@@ -275,6 +275,57 @@ section label { display: block; margin: 6px 0; }
 .profile-list small { color: var(--muted); }
 .profile-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
+/* Modal overlay + game-over celebration */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fade-in 180ms ease-out;
+}
+.modal {
+  background: var(--panel);
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 360px;
+  width: calc(100% - 32px);
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  animation: pop-in 220ms cubic-bezier(0.2, 1.4, 0.5, 1);
+}
+.game-over-emoji {
+  font-size: 4rem;
+  line-height: 1;
+  margin-bottom: 8px;
+  animation: bounce 600ms ease-out;
+}
+.game-over h2 {
+  margin: 0 0 6px;
+  color: var(--accent);
+}
+.game-over p {
+  margin: 0 0 18px;
+  color: var(--muted);
+}
+.game-over-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pop-in  { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes bounce {
+  0% { transform: translateY(-24px) scale(0.6); opacity: 0; }
+  60% { transform: translateY(6px) scale(1.1); opacity: 1; }
+  100% { transform: translateY(0) scale(1); }
+}
+
 .leaderboard {
   width: 100%;
   border-collapse: collapse;
