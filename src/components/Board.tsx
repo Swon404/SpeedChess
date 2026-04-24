@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { Move, Piece as PieceT, Square, squareName } from "../engine/board";
 import { useGame } from "../GameContext";
 import { Piece } from "./Piece";
@@ -37,6 +38,7 @@ export function Board({ flipped = false }: Props) {
   };
 
   const lastMove = state.history[state.history.length - 1];
+  const moveIndex = state.history.length;
 
   return (
     <div className={`board board-theme-${theme} piece-set-${pieceSet}`}>
@@ -57,6 +59,24 @@ export function Board({ flipped = false }: Props) {
               legal ? (piece ? "legal-capture" : "legal-move") : "",
               isLastFrom || isLastTo ? "last-move" : ""
             ].filter(Boolean).join(" ");
+
+            // Slide animation: when this square is the destination of the last
+            // move, render the piece translated from its origin and animate to
+            // 0. Sign is flipped when the board is flipped.
+            let slideStyle: CSSProperties | undefined;
+            let slideKey: string | undefined;
+            if (isLastTo && lastMove && piece) {
+              const df = lastMove.from.file - lastMove.to.file;
+              const dr = lastMove.to.rank - lastMove.from.rank;
+              const sign = flipped ? -1 : 1;
+              slideStyle = {
+                // CSS vars consumed by .piece-sliding keyframes
+                ["--slide-dx" as string]: `${sign * df * 100}%`,
+                ["--slide-dy" as string]: `${sign * dr * 100}%`
+              };
+              slideKey = `slide-${moveIndex}`;
+            }
+
             return (
               <button
                 key={f}
@@ -64,7 +84,15 @@ export function Board({ flipped = false }: Props) {
                 aria-label={squareName(sq)}
                 onClick={() => onSquareClick(sq)}
               >
-                {piece && <Piece color={piece.color} type={piece.type} set={pieceSet} />}
+                {piece && (
+                  <span
+                    key={slideKey}
+                    className={slideKey ? "piece-wrap piece-sliding" : "piece-wrap"}
+                    style={slideStyle}
+                  >
+                    <Piece color={piece.color} type={piece.type} set={pieceSet} />
+                  </span>
+                )}
               </button>
             );
           })}

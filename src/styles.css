@@ -155,6 +155,25 @@ section label { display: block; margin: 6px 0; }
 .board-theme-neon .square.dark  { background: linear-gradient(135deg, #120725, #05010f); }
 
 /* Piece rendering */
+.piece-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+.piece-sliding {
+  animation: piece-slide 220ms ease-out;
+  will-change: transform;
+}
+@keyframes piece-slide {
+  from { transform: translate(var(--slide-dx, 0), var(--slide-dy, 0)); }
+  to   { transform: translate(0, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .piece-sliding { animation: none; }
+}
+
 .piece-glyph {
   font-size: min(11vw, 60px);
   line-height: 1;
