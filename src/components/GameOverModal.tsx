@@ -1,7 +1,9 @@
+import { useNavigate } from "react-router-dom";
 import { useGame } from "../GameContext";
 
 export function GameOverModal() {
   const { result, mode, players, newGame } = useGame();
+  const nav = useNavigate();
   if (result.kind === "ongoing") return null;
 
   let title = "";
@@ -47,6 +49,9 @@ export function GameOverModal() {
             { w: players.b, b: players.w }
           )}>
             Swap sides
+          </button>
+          <button onClick={() => nav("/")}>
+            Exit
           </button>
         </div>
       </div>
