@@ -20,10 +20,14 @@ export interface ProfileStats {
   badges: string[];
 }
 
+export type BoardTheme = "wood" | "blue" | "green" | "neon";
+export type PieceSet = "classic" | "modern" | "neon";
+
 export interface Settings {
   activeProfileId: string | null;
   timerSeconds: number; // 0 = off
-  theme: "classic" | "cartoon" | "neon";
+  theme: BoardTheme;
+  pieceSet: PieceSet;
   sound: boolean;
   haptics: boolean;
   autoFlip: boolean;
@@ -48,7 +52,8 @@ export interface Store {
 const DEFAULT_SETTINGS: Settings = {
   activeProfileId: null,
   timerSeconds: 30,
-  theme: "cartoon",
+  theme: "wood",
+  pieceSet: "modern",
   sound: true,
   haptics: true,
   autoFlip: true,

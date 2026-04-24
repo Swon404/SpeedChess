@@ -1,10 +1,6 @@
-import { Move, Piece, Square, squareName } from "../engine/board";
+import { Move, Piece as PieceT, Square, squareName } from "../engine/board";
 import { useGame } from "../GameContext";
-
-const GLYPH: Record<string, string> = {
-  wK: "♔", wQ: "♕", wR: "♖", wB: "♗", wN: "♘", wP: "♙",
-  bK: "♚", bQ: "♛", bR: "♜", bB: "♝", bN: "♞", bP: "♟"
-};
+import { Piece } from "./Piece";
 
 function isLegalTarget(legal: Move[], sq: Square): Move | undefined {
   return legal.find((m) => m.to.file === sq.file && m.to.rank === sq.rank);
@@ -15,7 +11,9 @@ interface Props {
 }
 
 export function Board({ flipped = false }: Props) {
-  const { state, selected, legalFromSelected, select, tryMove, result } = useGame();
+  const { state, selected, legalFromSelected, select, tryMove, result, store } = useGame();
+  const theme = store.settings.theme;
+  const pieceSet = store.settings.pieceSet;
 
   const ranks = flipped ? [0, 1, 2, 3, 4, 5, 6, 7] : [7, 6, 5, 4, 3, 2, 1, 0];
   const files = flipped ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
@@ -41,12 +39,12 @@ export function Board({ flipped = false }: Props) {
   const lastMove = state.history[state.history.length - 1];
 
   return (
-    <div className="board">
+    <div className={`board board-theme-${theme} piece-set-${pieceSet}`}>
       {ranks.map((r) => (
         <div key={r} className="board-row">
           {files.map((f) => {
             const sq: Square = { file: f, rank: r };
-            const piece: Piece | null = state.board[r][f];
+            const piece: PieceT | null = state.board[r][f];
             const isLight = (r + f) % 2 === 1;
             const isSelected = selected && selected.file === f && selected.rank === r;
             const legal = isLegalTarget(legalFromSelected, sq);
@@ -66,11 +64,7 @@ export function Board({ flipped = false }: Props) {
                 aria-label={squareName(sq)}
                 onClick={() => onSquareClick(sq)}
               >
-                {piece && (
-                  <span className={`piece piece-${piece.color}`}>
-                    {GLYPH[piece.color + piece.type]}
-                  </span>
-                )}
+                {piece && <Piece color={piece.color} type={piece.type} set={pieceSet} />}
               </button>
             );
           })}

@@ -25,12 +25,24 @@ export function SettingsScreen() {
       <section>
         <h3>Board theme</h3>
         <div className="difficulty">
-          {(["classic", "cartoon", "neon"] as const).map((t) => (
+          {(["wood", "blue", "green", "neon"] as const).map((t) => (
             <button key={t}
               className={t === s.theme ? "pill active" : "pill"}
               onClick={() => updateSetting("theme", t)}>{t}</button>
           ))}
         </div>
+      </section>
+
+      <section>
+        <h3>Piece set</h3>
+        <div className="difficulty">
+          {(["classic", "modern", "neon"] as const).map((t) => (
+            <button key={t}
+              className={t === s.pieceSet ? "pill active" : "pill"}
+              onClick={() => updateSetting("pieceSet", t)}>{t}</button>
+          ))}
+        </div>
+        <p className="hint">Classic = Unicode ♚ · Modern = crisp SVG · Neon = glow</p>
       </section>
 
       <section>
