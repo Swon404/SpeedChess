@@ -28,6 +28,8 @@ import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { Decompress } from "fzstd";
+import { Readable } from "node:stream";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -56,7 +58,7 @@ async function main() {
   const perCategoryCap = Math.ceil(total / 3);
   const buckets: Record<1 | 2 | 3, any[]> = { 1: [], 2: [], 3: [] };
 
-  const stream = fs.createReadStream(csvPath, { encoding: "utf8" });
+  const stream = makeInputStream(csvPath);
   const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
   let first = true;
   let scanned = 0;
@@ -139,3 +141,32 @@ main().catch((err) => {
   console.error(err);
   process.exit(1);
 });
+
+/**
+ * Stream bytes from either a plain CSV or a Lichess-style `.zst` archive,
+ * yielding a readable stream of UTF-8 text lines.
+ */
+function makeInputStream(p) {
+  const raw = fs.createReadStream(p);
+  if (!p.toLowerCase().endsWith(".zst")) {
+    raw.setEncoding("utf8");
+    return raw;
+  }
+  // Decompress zstd on the fly with fzstd.
+  const out = new Readable({ read() {} });
+  const dec = new Decompress((chunk, isLast) => {
+    out.push(Buffer.from(chunk));
+    if (isLast) out.push(null);
+  });
+  raw.on("data", (buf) => {
+    try { dec.push(new Uint8Array(buf), false); }
+    catch (e) { out.destroy(e); }
+  });
+  raw.on("end", () => {
+    try { dec.push(new Uint8Array(0), true); }
+    catch (e) { out.destroy(e); }
+  });
+  raw.on("error", (e) => out.destroy(e));
+  out.setEncoding("utf8");
+  return out;
+}
