@@ -191,6 +191,18 @@ section label { display: block; margin: 6px 0; }
 }
 .clock-side.active { border-color: var(--accent); }
 
+.look-picker {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 8px;
+}
+.look-picker button {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+  text-transform: capitalize;
+}
+
 .controls {
   display: flex;
   justify-content: space-between;

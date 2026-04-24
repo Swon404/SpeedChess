@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Board } from "../components/Board";
 import { Clock } from "../components/Clock";
 import { Controls } from "../components/Controls";
+import { LookPicker } from "../components/LookPicker";
 import { MoveList } from "../components/MoveList";
 import { useGame } from "../GameContext";
 
@@ -17,6 +18,7 @@ export function GameScreen() {
         <Link to="/new">New game</Link>
       </div>
       <Clock />
+      <LookPicker />
       <Board flipped={flipped} />
       <Controls />
       <MoveList />
