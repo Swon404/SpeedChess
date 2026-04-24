@@ -22,6 +22,10 @@ export function GameOverModal() {
     title = "Draw";
     subtitle = "50 moves without a capture or pawn move.";
     emoji = "🤝";
+  } else if (result.kind === "threefold") {
+    title = "Draw";
+    subtitle = "Same position reached three times.";
+    emoji = "🤝";
   } else if (result.kind === "insufficient") {
     title = "Draw";
     subtitle = "Not enough pieces left to checkmate.";

@@ -8,6 +8,7 @@ import {
   Piece,
   PieceType,
   pieceAt,
+  positionKey,
   Square,
   sqEq
 } from "./board";
@@ -275,6 +276,8 @@ export function makeMove(state: GameState, move: Move): GameState {
   if (piece.color === "b") ns.fullmove++;
   ns.turn = opposite(piece.color);
   ns.history.push(move);
+  if (!ns.positionKeys) ns.positionKeys = [];
+  ns.positionKeys.push(positionKey(ns));
   return ns;
 }
 
@@ -293,6 +296,8 @@ export function forfeitMove(state: GameState): GameState {
   ns.turn = opposite(ns.turn);
   ns.halfmove++;
   ns.enPassant = null;
+  if (!ns.positionKeys) ns.positionKeys = [];
+  ns.positionKeys.push(positionKey(ns));
   return ns;
 }
 
@@ -320,6 +325,7 @@ export type GameResult =
   | { kind: "checkmate"; winner: Color }
   | { kind: "stalemate" }
   | { kind: "fifty-move" }
+  | { kind: "threefold" }
   | { kind: "insufficient" };
 
 export function gameResult(state: GameState): GameResult {
@@ -330,7 +336,17 @@ export function gameResult(state: GameState): GameResult {
   }
   if (state.halfmove >= 100) return { kind: "fifty-move" };
   if (isInsufficientMaterial(state)) return { kind: "insufficient" };
+  if (isThreefoldRepetition(state)) return { kind: "threefold" };
   return { kind: "ongoing" };
+}
+
+function isThreefoldRepetition(state: GameState): boolean {
+  const keys = state.positionKeys;
+  if (!keys || keys.length === 0) return false;
+  const current = keys[keys.length - 1];
+  let count = 0;
+  for (const k of keys) if (k === current) { count++; if (count >= 3) return true; }
+  return false;
 }
 
 function isInsufficientMaterial(state: GameState): boolean {

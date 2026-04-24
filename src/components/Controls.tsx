@@ -11,6 +11,8 @@ export function Controls() {
       ? "Stalemate"
       : result.kind === "fifty-move"
       ? "Draw (50-move rule)"
+      : result.kind === "threefold"
+      ? "Draw (threefold repetition)"
       : "Draw (insufficient material)";
 
   return (
