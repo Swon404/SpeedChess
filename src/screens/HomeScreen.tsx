@@ -14,6 +14,7 @@ export function HomeScreen() {
       </div>
       <div className="menu">
         <Link className="menu-btn" to="/new">▶ Play</Link>
+        <Link className="menu-btn" to="/puzzles">🧩 Puzzles</Link>
         <Link className="menu-btn" to="/learn">🧠 Learn</Link>
         <Link className="menu-btn" to="/leaderboard">🏆 Leaderboard</Link>
         <Link className="menu-btn" to="/profiles">👤 Players</Link>

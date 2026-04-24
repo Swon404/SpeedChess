@@ -37,6 +37,9 @@ interface GameCtx {
   newGame(mode: Mode, players?: Partial<Players>): void;
   forfeit(): void;
 
+  // puzzles
+  loadPosition(state: GameState, players?: Partial<Players>): void;
+
   // hint
   hint: Move | null;
   requestHint(): void;
@@ -312,6 +315,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const forfeit = useCallback(() => dispatch({ type: "forfeit" }), []);
 
+  const loadPosition = useCallback((newState: GameState, p?: Partial<Players>) => {
+    clearActiveSession();
+    setMode({ kind: "two-player" });
+    setPlayers({ w: p?.w ?? "You", b: p?.b ?? "Puzzle" });
+    dispatch({ type: "set-state", state: newState });
+    setSelected(null);
+    setHint(null);
+  }, []);
+
   const requestHint = useCallback(() => {
     (async () => {
       const best = await chooseBotMove(state, 5);
@@ -354,6 +366,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const value: GameCtx = {
     store, activeProfile, state, mode, players, selected, legalFromSelected, timeLeft, isBotThinking, result,
     select, tryMove, undo, newGame, forfeit,
+    loadPosition,
     hint, requestHint, clearHint,
     setActiveProfile, addProfile, removeProfile, renamePlayer, updateSetting
   };

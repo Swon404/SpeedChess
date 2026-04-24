@@ -170,6 +170,15 @@ export function saveActiveGame(store: Store, profileId: string, game: SavedGame 
   save(store);
 }
 
+export function recordPuzzleSolved(store: Store, profileId: string | null): void {
+  if (!profileId) return;
+  const p = store.profiles.find((x) => x.id === profileId);
+  if (!p) return;
+  p.stats.puzzlesSolved++;
+  awardBadges(p);
+  save(store);
+}
+
 export function getLeaderboard(store: Store): Profile[] {
   return store.profiles.slice().sort((a, b) => b.stats.rating - a.stats.rating);
 }

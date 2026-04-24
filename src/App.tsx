@@ -7,6 +7,7 @@ import { ProfileScreen } from "./screens/ProfileScreen";
 import { LeaderboardScreen } from "./screens/LeaderboardScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
 import { LearnScreen } from "./screens/LearnScreen";
+import { PuzzlesScreen } from "./screens/PuzzlesScreen";
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
           <Route path="/" element={<HomeScreen />} />
           <Route path="/new" element={<NewGameScreen />} />
           <Route path="/play" element={<GameScreen />} />
+          <Route path="/puzzles" element={<PuzzlesScreen />} />
           <Route path="/profiles" element={<ProfileScreen />} />
           <Route path="/leaderboard" element={<LeaderboardScreen />} />
           <Route path="/learn" element={<LearnScreen />} />
