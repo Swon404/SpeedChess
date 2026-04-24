@@ -139,6 +139,51 @@ section label { display: block; margin: 6px 0; }
   box-shadow: inset 0 0 0 4px var(--legal-capture);
 }
 
+/* King in check — red pulsing square */
+.square.in-check {
+  background-image: radial-gradient(circle at center, rgba(239,68,68,0.9) 0%, rgba(239,68,68,0.35) 55%, transparent 75%);
+  animation: check-pulse 900ms ease-in-out infinite;
+}
+@keyframes check-pulse {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.25); }
+}
+
+/* Hint arrow squares */
+.square.hint-from {
+  box-shadow: inset 0 0 0 4px rgba(56, 189, 248, 0.85);
+}
+.square.hint-to::before {
+  content: "";
+  position: absolute;
+  inset: 10%;
+  border: 3px dashed rgba(56, 189, 248, 0.9);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: hint-spin 3s linear infinite;
+}
+@keyframes hint-spin { to { transform: rotate(360deg); } }
+
+/* Promotion picker */
+.promo-picker h3 { margin: 0 0 12px; }
+.promo-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+.promo-button {
+  width: 64px;
+  height: 64px;
+  background: var(--light);
+  border: 2px solid #334155;
+  border-radius: 10px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.promo-button:active { transform: scale(0.95); }
+
 /* Board themes — override the --light/--dark pair */
 .board-theme-wood { --light: #f0d9b5; --dark: #b58863; }
 .board-theme-blue { --light: #dee3e6; --dark: #788a94; }

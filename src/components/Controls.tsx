@@ -1,7 +1,7 @@
 import { useGame } from "../GameContext";
 
 export function Controls() {
-  const { undo, newGame, mode, result, state } = useGame();
+  const { undo, newGame, mode, result, state, requestHint, hint, clearHint } = useGame();
   const statusText =
     result.kind === "ongoing"
       ? `${state.turn === "w" ? "White" : "Black"} to move`
@@ -15,10 +15,19 @@ export function Controls() {
       ? "Draw (threefold repetition)"
       : "Draw (insufficient material)";
 
+  const ongoing = result.kind === "ongoing";
+
   return (
     <div className="controls">
       <div className="status">{statusText}</div>
       <div className="buttons">
+        <button
+          onClick={() => (hint ? clearHint() : requestHint())}
+          disabled={!ongoing}
+          title="Show a suggested move"
+        >
+          {hint ? "Hide hint" : "💡 Hint"}
+        </button>
         <button onClick={() => undo()} disabled={state.history.length === 0}>Undo</button>
         <button onClick={() => newGame(mode)}>New Game</button>
       </div>

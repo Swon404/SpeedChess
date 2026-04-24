@@ -5,10 +5,11 @@ import {
   GameState, Move, Square, initialState, pieceAt
 } from "./engine/board";
 import {
-  forfeitMove, gameResult, legalMovesFrom, makeMove
+  forfeitMove, gameResult, inCheck, legalMovesFrom, makeMove
 } from "./engine/rules";
 import { toSAN } from "./engine/notation";
 import { chooseBotMove } from "./engine/bot";
+import { playSound } from "./engine/sound";
 import {
   load, Profile, recordResult, saveActiveGame, Settings, Store, updateSettings,
   createProfile, deleteProfile, renameProfile
@@ -34,6 +35,11 @@ interface GameCtx {
   undo(): void;
   newGame(mode: Mode, players?: Partial<Players>): void;
   forfeit(): void;
+
+  // hint
+  hint: Move | null;
+  requestHint(): void;
+  clearHint(): void;
 
   // profile & settings
   setActiveProfile(id: string | null): void;
@@ -89,6 +95,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     store.settings.timerSeconds > 0 ? store.settings.timerSeconds : Infinity
   );
   const [isBotThinking, setIsBotThinking] = useState(false);
+  const [hint, setHint] = useState<Move | null>(null);
   const stateRef = useRef(state);
   useEffect(() => { stateRef.current = state; }, [state]);
 
@@ -98,6 +105,34 @@ export function GameProvider({ children }: { children: ReactNode }) {
   );
 
   const result = useMemo(() => gameResult(state), [state]);
+
+  // Clear hint whenever the position changes.
+  useEffect(() => { setHint(null); }, [state.history.length]);
+
+  // Sound effects for moves and game end.
+  const soundedLenRef = useRef<number>(state.history.length);
+  useEffect(() => {
+    if (!store.settings.sound) { soundedLenRef.current = state.history.length; return; }
+    if (state.history.length > soundedLenRef.current) {
+      const lastMove = state.history[state.history.length - 1];
+      const isCheck = result.kind === "ongoing" && isInCheckNow(state);
+      if (result.kind === "checkmate") {
+        // win/loss from the active profile's perspective (white) when vs bot
+        const playerIsWhite = mode.kind === "bot";
+        const winnerIsPlayer = playerIsWhite && result.winner === "w";
+        playSound(winnerIsPlayer ? "win" : (mode.kind === "bot" ? "loss" : "win"));
+      } else if (result.kind !== "ongoing") {
+        playSound("draw");
+      } else if (isCheck) {
+        playSound("check");
+      } else if (lastMove?.captured) {
+        playSound("capture");
+      } else {
+        playSound("move");
+      }
+    }
+    soundedLenRef.current = state.history.length;
+  }, [state, result, mode, store.settings.sound]);
 
   // Reset timer on each turn change
   useEffect(() => {
@@ -236,6 +271,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const forfeit = useCallback(() => dispatch({ type: "forfeit" }), []);
 
+  const requestHint = useCallback(() => {
+    (async () => {
+      const best = await chooseBotMove(state, 5);
+      if (best) setHint(best);
+    })();
+  }, [state]);
+  const clearHint = useCallback(() => setHint(null), []);
+
   const setActiveProfile = useCallback((id: string | null) => {
     const updated = cloneStore(store);
     updateSettings(updated, { activeProfileId: id });
@@ -270,10 +313,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const value: GameCtx = {
     store, activeProfile, state, mode, players, selected, legalFromSelected, timeLeft, isBotThinking, result,
     select, tryMove, undo, newGame, forfeit,
+    hint, requestHint, clearHint,
     setActiveProfile, addProfile, removeProfile, renamePlayer, updateSetting
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+}
+
+function isInCheckNow(s: GameState): boolean {
+  return inCheck(s, s.turn);
 }
 
 function cloneStore(s: Store): Store {
