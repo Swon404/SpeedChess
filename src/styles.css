@@ -254,6 +254,8 @@ section label { display: block; margin: 6px 0; }
   border: 1px solid transparent;
 }
 .clock-side.active { border-color: var(--accent); }
+.clock-side strong { font-variant-numeric: tabular-nums; font-size: 1.1rem; }
+.clock-side strong.low { color: #ef4444; animation: check-pulse 900ms ease-in-out infinite; }
 
 .look-picker {
   display: flex;
