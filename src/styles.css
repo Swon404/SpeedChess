@@ -239,6 +239,7 @@ section label { display: block; margin: 6px 0; }
 .piece-set-neon .piece-svg.piece-b { filter: drop-shadow(0 0 6px #ff4fa3) drop-shadow(0 0 14px #ff4fa3); }
 
 .piece-mc {
+  position: relative;
   display: flex;
   width: 92%;
   height: 92%;
@@ -246,7 +247,35 @@ section label { display: block; margin: 6px 0; }
   justify-content: center;
   filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.45));
 }
-.mc-piece { width: 100%; height: 100%; image-rendering: pixelated; }
+.mc-piece {
+  position: relative;
+  display: inline-flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+.mc-plate {
+  position: absolute;
+  inset: 4%;
+  border-radius: 50%;
+  border-width: 1px;
+  border-style: solid;
+}
+.mc-img {
+  position: relative;
+  width: 86%;
+  height: 86%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.mc-fallback {
+  position: relative;
+  font-size: min(9vw, 44px);
+  line-height: 1;
+}
 .piece-set-neon .piece-mc { filter: drop-shadow(0 0 4px #00e5ff) drop-shadow(0 0 10px #ff4fa3); }
 
 /* Capture explosion */
