@@ -1,17 +1,20 @@
 # Minecraft piece set
 
-Drop **6 PNG files** in this folder, named exactly:
+The board loads 12 PNGs from this folder, one per side per piece:
 
-- `K.png` &mdash; King (e.g. Steve)
-- `Q.png` &mdash; Queen (e.g. Alex)
-- `R.png` &mdash; Rook (e.g. cobblestone block)
-- `B.png` &mdash; Bishop (e.g. Enderman)
-- `N.png` &mdash; Knight (e.g. Skeleton)
-- `P.png` &mdash; Pawn (e.g. Zombie)
+- White: `wK.png` `wQ.png` `wR.png` `wB.png` `wN.png` `wP.png`
+- Black: `bK.png` `bQ.png` `bR.png` `bB.png` `bN.png` `bP.png`
 
-## Recommendations
+Each is 256&times;256 px, transparent background, with a circular plate baked into the art (light plate for white, dark plate for black).
 
-- **Square images** (64&times;64 to 256&times;256 px). They're rendered at ~60px on the board so 128&times;128 is plenty.
-- **Transparent background** &mdash; the app draws a colored circular plate behind the image (cream for white side, dark slate for black side) so transparent PNGs blend properly.
-- **Same artwork for both sides** &mdash; the plate color is what tells the player which side a piece is on.
-- PNGs are served as static assets, so no rebuild is needed when you swap them &mdash; just refresh.
+## Where they come from
+
+These files are produced by slicing `data/minecraft-reference.png` with `npm run crop-pieces`. To tweak the slicing, edit `PICKS` in [`scripts/crop-pieces.mts`](../../../scripts/crop-pieces.mts).
+
+## Hand-editing
+
+See [`EDITING.md`](EDITING.md) for the GIMP workflow.
+
+## Fallback
+
+If a PNG is missing, the app renders an emoji glyph for that piece type instead (see `MinecraftPiece` in [`src/components/MinecraftPieces.tsx`](../../../src/components/MinecraftPieces.tsx)).

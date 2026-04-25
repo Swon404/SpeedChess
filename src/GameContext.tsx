@@ -2,7 +2,7 @@ import {
   createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState
 } from "react";
 import {
-  GameState, Move, Square, initialState, pieceAt
+  GameState, Move, PieceType, Square, initialState, pieceAt
 } from "./engine/board";
 import {
   forfeitMove, gameResult, inCheck, legalMovesFrom, makeMove
@@ -18,8 +18,19 @@ import {
   recordPuzzleAttempt as storeRecordPuzzleAttempt
 } from "./engine/storage";
 
-type Mode = { kind: "two-player" } | { kind: "bot"; level: number };
+type Mode =
+  | { kind: "two-player" }
+  | { kind: "bot"; level: number }
+  | { kind: "portal"; opponent: "two-player" | { kind: "bot"; level: number }; creator: PieceType };
 export interface Players { w: string; b: string; }
+
+/** Build the initial state for Portal Chess (creator-type portals). */
+function portalInitialState(creator: PieceType): GameState {
+  const s = initialState();
+  s.portals = { w: null, b: null };
+  s.portalCreators = { w: creator, b: creator };
+  return s;
+}
 
 interface GameCtx {
   store: Store;
@@ -37,7 +48,7 @@ interface GameCtx {
   togglePause(): void;
 
   select(sq: Square | null): void;
-  tryMove(from: Square, to: Square, promotion?: "Q" | "R" | "B" | "N"): boolean;
+  tryMove(from: Square, to: Square, promotion?: "Q" | "R" | "B" | "N", portalTo?: Square): boolean;
   undo(): void;
   newGame(mode: Mode, players?: Partial<Players>): void;
   forfeit(): void;
@@ -58,6 +69,15 @@ interface GameCtx {
   removeProfile(id: string): void;
   renamePlayer(id: string, name: string): void;
   updateSetting<K extends keyof Settings>(key: K, value: Settings[K]): void;
+}
+
+/** Returns the bot level if the mode is bot-driven (incl. portal+bot), else null. */
+function botLevelOf(m: Mode): number | null {
+  if (m.kind === "bot") return m.level;
+  if (m.kind === "portal" && typeof m.opponent !== "string" && m.opponent.kind === "bot") {
+    return m.opponent.level;
+  }
+  return null;
 }
 
 const Ctx = createContext<GameCtx | null>(null);
@@ -143,9 +163,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
       const isCheck = result.kind === "ongoing" && isInCheckNow(state);
       if (result.kind === "checkmate") {
         // win/loss from the active profile's perspective (white) when vs bot
-        const playerIsWhite = mode.kind === "bot";
+        const playerIsWhite = botLevelOf(mode) !== null;
         const winnerIsPlayer = playerIsWhite && result.winner === "w";
-        playSound(winnerIsPlayer ? "win" : (mode.kind === "bot" ? "loss" : "win"));
+        playSound(winnerIsPlayer ? "win" : (botLevelOf(mode) !== null ? "loss" : "win"));
       } else if (result.kind !== "ongoing") {
         playSound("draw");
       } else if (isCheck) {
@@ -210,7 +230,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   // Bot move
   useEffect(() => {
-    if (mode.kind !== "bot") return;
+    const lvl = botLevelOf(mode);
+    if (lvl === null) return;
     if (result.kind !== "ongoing") return;
     if (paused) return;
     // Bot plays black by default
@@ -224,7 +245,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         // re-renders with the bot's response.
         const minThinkMs = 320;
         const t0 = performance.now();
-        const move = await chooseBotMove(state, mode.level);
+        const move = await chooseBotMove(state, lvl);
         const elapsed = performance.now() - t0;
         if (elapsed < minThinkMs) {
           await new Promise((r) => setTimeout(r, minThinkMs - elapsed));
@@ -251,11 +272,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
     recordedRef.current = stack.length;
     const winner = result.kind === "checkmate" ? result.winner : null;
     const updated = cloneStore(store);
-    if (mode.kind === "bot") {
+    const lvl = botLevelOf(mode);
+    if (lvl !== null) {
       if (!activeProfile) return;
       const outcome: "win" | "loss" | "draw" =
         winner === null ? "draw" : winner === "w" ? "win" : "loss";
-      recordResult(updated, activeProfile.id, { kind: "bot", level: mode.level }, outcome);
+      recordResult(updated, activeProfile.id, { kind: "bot", level: lvl }, outcome);
       saveActiveGame(updated, activeProfile.id, null);
     } else {
       // two-player: record vs each named profile if found
@@ -277,8 +299,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const updated = cloneStore(store);
     saveActiveGame(updated, activeProfile.id, {
       state,
-      mode: mode.kind === "bot" ? "bot" : "two-player",
-      botLevel: mode.kind === "bot" ? mode.level : undefined,
+      mode: botLevelOf(mode) !== null ? "bot" : "two-player",
+      botLevel: botLevelOf(mode) ?? undefined,
       players: { w: players.w, b: players.b },
       timerSeconds: store.settings.timerSeconds,
       startedAt: Date.now()
@@ -299,14 +321,19 @@ export function GameProvider({ children }: { children: ReactNode }) {
     else setSelected(null);
   }, [state]);
 
-  const tryMove = useCallback((from: Square, to: Square, promotion?: "Q" | "R" | "B" | "N"): boolean => {
+  const tryMove = useCallback((from: Square, to: Square, promotion?: "Q" | "R" | "B" | "N", portalTo?: Square): boolean => {
     if (paused) return false;
     const candidates = legalMovesFrom(state, from).filter(
       (m) => m.to.file === to.file && m.to.rank === to.rank
     );
     if (candidates.length === 0) return false;
     let move = candidates[0];
-    if (candidates.some((m) => m.promotion)) {
+    if (portalTo) {
+      const portalMatch = candidates.find(
+        (m) => m.isPortalEntry && m.portalTo && m.portalTo.file === portalTo.file && m.portalTo.rank === portalTo.rank
+      );
+      if (portalMatch) move = portalMatch;
+    } else if (candidates.some((m) => m.promotion)) {
       move = candidates.find((m) => m.promotion === (promotion ?? "Q")) ?? candidates[0];
     }
     const san = toSAN(state, move);
@@ -318,7 +345,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const undo = useCallback(() => {
     // Undo twice if playing a bot and it's the human's turn (to remove bot reply + own move).
     dispatch({ type: "undo" });
-    if (mode.kind === "bot") dispatch({ type: "undo" });
+    if (botLevelOf(mode) !== null) dispatch({ type: "undo" });
     setSelected(null);
   }, [mode]);
 
@@ -327,9 +354,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
     noTimerRef.current = false;
     setMode(m);
     const defaultW = activeProfile?.name ?? "White";
-    const defaultB = m.kind === "bot" ? `Bot Lv ${m.level}` : "Player 2";
+    const defaultB =
+      m.kind === "bot"
+        ? `Bot Lv ${m.level}`
+        : m.kind === "portal" && typeof m.opponent !== "string" && m.opponent.kind === "bot"
+          ? `Bot Lv ${m.opponent.level}`
+          : "Player 2";
     setPlayers({ w: p?.w ?? defaultW, b: p?.b ?? defaultB });
-    dispatch({ type: "new", initial: initialState() });
+    const fresh = m.kind === "portal" ? portalInitialState(m.creator) : initialState();
+    dispatch({ type: "new", initial: fresh });
     setSelected(null);
     setPaused(false);
     // Force the clock to use the freshest timer setting — the caller often

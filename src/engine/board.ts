@@ -20,6 +20,10 @@ export interface Move {
   promotion?: PieceType;
   isEnPassant?: boolean;
   isCastle?: "K" | "Q";
+  /** Portal Chess: this move LANDS on an active portal and the piece teleports. */
+  isPortalEntry?: boolean;
+  /** Portal Chess: final landing square after teleport (when isPortalEntry). */
+  portalTo?: Square;
   san?: string;
 }
 
@@ -42,6 +46,16 @@ export interface GameState {
   forfeits: number[]; // indices in history where a timeout occurred (for display)
   // Rolling list of position keys for threefold-repetition detection.
   positionKeys: string[];
+  /**
+   * Portal Chess: per-side active portal location (or null for none).
+   * Undefined disables portal mode entirely (default for normal chess).
+   */
+  portals?: { w: Square | null; b: Square | null };
+  /**
+   * Portal Chess: which piece type creates portals for each side.
+   * Set when a Portal Chess game starts. Undefined = mode off.
+   */
+  portalCreators?: { w: PieceType; b: PieceType };
 }
 
 export const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"] as const;
@@ -76,7 +90,14 @@ export function cloneState(s: GameState): GameState {
     fullmove: s.fullmove,
     history: s.history.slice(),
     forfeits: s.forfeits.slice(),
-    positionKeys: (s.positionKeys ?? []).slice()
+    positionKeys: (s.positionKeys ?? []).slice(),
+    portals: s.portals
+      ? {
+          w: s.portals.w ? { ...s.portals.w } : null,
+          b: s.portals.b ? { ...s.portals.b } : null
+        }
+      : undefined,
+    portalCreators: s.portalCreators ? { ...s.portalCreators } : undefined
   };
 }
 
@@ -124,7 +145,13 @@ export function positionKey(s: GameState): string {
     (s.castling.bK ? "k" : "") +
     (s.castling.bQ ? "q" : "") || "-";
   const ep = s.enPassant ? `${s.enPassant.file}${s.enPassant.rank}` : "-";
-  return `${b}|${s.turn}|${c}|${ep}`;
+  let portalKey = "";
+  if (s.portals) {
+    const wp = s.portals.w ? `${s.portals.w.file}${s.portals.w.rank}` : "-";
+    const bp = s.portals.b ? `${s.portals.b.file}${s.portals.b.rank}` : "-";
+    portalKey = `|P${wp}${bp}`;
+  }
+  return `${b}|${s.turn}|${c}|${ep}${portalKey}`;
 }
 
 export function pieceAt(state: GameState, sq: Square): Piece | null {

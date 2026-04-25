@@ -1,15 +1,19 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { PieceType } from "../engine/board";
 import { useGame } from "../GameContext";
 
 export function NewGameScreen() {
   const nav = useNavigate();
   const { newGame, store, updateSetting, addProfile, setActiveProfile, activeProfile } = useGame();
-  const [kind, setKind] = useState<"two-player" | "bot">("bot");
+  const [kind, setKind] = useState<"two-player" | "bot" | "portal">("bot");
   const [level, setLevel] = useState<number>(1);
   const [timer, setTimer] = useState<number>(store.settings.timerSeconds);
   const [whiteName, setWhiteName] = useState<string>(activeProfile?.name ?? "");
   const [blackName, setBlackName] = useState<string>("");
+  // Portal Chess sub-options
+  const [portalCreator, setPortalCreator] = useState<PieceType>("Q");
+  const [portalOpponentKind, setPortalOpponentKind] = useState<"two-player" | "bot">("bot");
 
   const ensureProfile = (name: string): string => {
     const trimmed = name.trim();
@@ -33,11 +37,28 @@ export function NewGameScreen() {
     if (kind === "two-player") {
       const b = ensureProfile(blackName || "Player 2");
       newGame({ kind: "two-player" }, { w, b });
-    } else {
+    } else if (kind === "bot") {
       newGame({ kind: "bot", level }, { w, b: `Bot Lv ${level}` });
+    } else {
+      // Portal Chess
+      if (portalOpponentKind === "two-player") {
+        const b = ensureProfile(blackName || "Player 2");
+        newGame(
+          { kind: "portal", opponent: "two-player", creator: portalCreator },
+          { w, b }
+        );
+      } else {
+        newGame(
+          { kind: "portal", opponent: { kind: "bot", level }, creator: portalCreator },
+          { w, b: `Bot Lv ${level}` }
+        );
+      }
     }
     nav("/play");
   };
+
+  const showBlackName = kind === "two-player" || (kind === "portal" && portalOpponentKind === "two-player");
+  const showLevel = kind === "bot" || (kind === "portal" && portalOpponentKind === "bot");
 
   return (
     <div className="screen">
@@ -45,10 +66,53 @@ export function NewGameScreen() {
       <h2>New Game</h2>
 
       <section>
-        <h3>Opponent</h3>
+        <h3>Mode</h3>
         <label><input type="radio" checked={kind === "bot"} onChange={() => setKind("bot")} /> Play the bot</label>
-        <label><input type="radio" checked={kind === "two-player"} onChange={() => setKind("two-player")} /> Two players (pass & play)</label>
+        <label><input type="radio" checked={kind === "two-player"} onChange={() => setKind("two-player")} /> Two players (pass &amp; play)</label>
+        <label><input type="radio" checked={kind === "portal"} onChange={() => setKind("portal")} /> 🌀 Portal Chess</label>
+        {kind === "portal" && (
+          <p className="hint">
+            After every move of the nominated piece, a glowing portal appears on the
+            square it lands on. Any non-pawn piece (either side) that lands on a portal
+            teleports to a chosen empty square not adjacent to any other piece. Each
+            side has at most one active portal at a time; portals are consumed when used.
+          </p>
+        )}
       </section>
+
+      {kind === "portal" && (
+        <>
+          <section>
+            <h3>Portal opponent</h3>
+            <label>
+              <input type="radio" checked={portalOpponentKind === "bot"}
+                onChange={() => setPortalOpponentKind("bot")} /> Play the bot
+            </label>
+            <label>
+              <input type="radio" checked={portalOpponentKind === "two-player"}
+                onChange={() => setPortalOpponentKind("two-player")} /> Two players (pass &amp; play)
+            </label>
+          </section>
+
+          <section>
+            <h3>Nominated piece (creates portals)</h3>
+            <div className="difficulty">
+              {(["Q", "R", "B", "N", "K"] as PieceType[]).map((p) => (
+                <button key={p}
+                  className={p === portalCreator ? "pill active" : "pill"}
+                  onClick={() => setPortalCreator(p)}>
+                  {p === "Q" ? "Queen" : p === "R" ? "Rook" : p === "B" ? "Bishop" : p === "N" ? "Knight" : "King"}
+                </button>
+              ))}
+            </div>
+            <p className="hint">
+              The nominated piece auto-drops a portal under itself after each move (if
+              its side has no active portal yet). It does not teleport through portals
+              itself. Pawns are excluded entirely &mdash; they never use portals.
+            </p>
+          </section>
+        </>
+      )}
 
       <section>
         <h3>♙ White player</h3>
@@ -71,7 +135,7 @@ export function NewGameScreen() {
         )}
       </section>
 
-      {kind === "two-player" && (
+      {showBlackName && (
         <section>
           <h3>♟ Black player</h3>
           <input
@@ -95,7 +159,7 @@ export function NewGameScreen() {
         </section>
       )}
 
-      {kind === "bot" && (
+      {showLevel && (
         <section>
           <h3>Bot difficulty</h3>
           <div className="difficulty">

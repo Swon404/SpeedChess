@@ -23,6 +23,58 @@ const BISHOP_DIRS: Dir[] = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
 const ROOK_DIRS: Dir[] = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 const KING_DIRS: Dir[] = [...BISHOP_DIRS, ...ROOK_DIRS];
 
+/** Portal Chess: returns "w"/"b" if `sq` hosts an active portal, else null. */
+export function portalAt(state: GameState, sq: Square): Color | null {
+  if (!state.portals) return null;
+  if (state.portals.w && sqEq(state.portals.w, sq)) return "w";
+  if (state.portals.b && sqEq(state.portals.b, sq)) return "b";
+  return null;
+}
+
+/** Portal Chess: square colour ("light" / "dark") for bishop teleport rule. */
+function sqColor(sq: Square): "light" | "dark" {
+  return (sq.file + sq.rank) % 2 === 0 ? "dark" : "light";
+}
+
+/**
+ * Portal Chess: enumerate squares the `mover` could teleport to from `portalSq`.
+ * Rules: target is empty, all 8 neighbours empty (treating `fromSq` and
+ * `portalSq` as empty), bishops restricted to same-colour as the portal
+ * square, and the move must not leave the mover's king in check.
+ * Caller is responsible for the king-safety check (we only filter geometry
+ * here so the checker can simulate the full move via makeMove).
+ */
+export function teleportTargets(
+  state: GameState,
+  fromSq: Square,
+  portalSq: Square,
+  mover: Piece
+): Square[] {
+  const out: Square[] = [];
+  const portalCol = sqColor(portalSq);
+  const isExempt = (sq: Square) => sqEq(sq, fromSq) || sqEq(sq, portalSq);
+  for (let r = 0; r < 8; r++) {
+    for (let f = 0; f < 8; f++) {
+      const sq = { file: f, rank: r };
+      if (isExempt(sq)) continue;
+      if (state.board[r][f]) continue;
+      if (mover.type === "B" && sqColor(sq) !== portalCol) continue;
+      let ok = true;
+      for (let dr = -1; dr <= 1 && ok; dr++) {
+        for (let df = -1; df <= 1 && ok; df++) {
+          if (dr === 0 && df === 0) continue;
+          const nb = { file: f + df, rank: r + dr };
+          if (!inBounds(nb)) continue;
+          if (isExempt(nb)) continue;
+          if (state.board[nb.rank][nb.file]) ok = false;
+        }
+      }
+      if (ok) out.push(sq);
+    }
+  }
+  return out;
+}
+
 function add(sq: Square, d: Dir): Square {
   return { file: sq.file + d[0], rank: sq.rank + d[1] };
 }
@@ -231,11 +283,40 @@ export function makeMove(state: GameState, move: Move): GameState {
     }
   }
 
-  // Place piece (with promotion)
+  // Capture happens at move.to (even for portal entry — capture, then teleport)
+  // Clear the destination square (handles capture).
+  ns.board[move.to.rank][move.to.file] = null;
+
+  // Portal Chess: portal entry consumes the portal at `to` and the piece
+  // teleports to `portalTo` instead of staying at `to`.
+  let landing: Square = move.to;
+  if (move.isPortalEntry && move.portalTo && ns.portals) {
+    const owner = portalAt(ns, move.to);
+    if (owner) ns.portals[owner] = null;
+    landing = move.portalTo;
+  }
+
+  // Place piece (with promotion) at landing square.
   const placed: Piece = move.promotion
     ? { type: move.promotion, color: piece.color }
     : piece;
-  ns.board[move.to.rank][move.to.file] = placed;
+  ns.board[landing.rank][landing.file] = placed;
+
+  // Portal Chess: auto-drop a portal under the creator piece if her side has
+  // no active portal and her landing square has no portal currently. Skipped
+  // for portal entries (creator can't trigger teleport, so this is unreachable
+  // there in practice, but guard anyway) and skipped if the move was a pawn
+  // promotion that produced a non-creator piece.
+  if (
+    ns.portals &&
+    ns.portalCreators &&
+    !move.isPortalEntry &&
+    placed.type === ns.portalCreators[piece.color] &&
+    ns.portals[piece.color] === null &&
+    portalAt(ns, landing) === null
+  ) {
+    ns.portals[piece.color] = { ...landing };
+  }
 
   // Update castling rights
   if (piece.type === "K") {
@@ -304,10 +385,33 @@ export function forfeitMove(state: GameState): GameState {
 export function legalMovesFrom(state: GameState, from: Square): Move[] {
   const p = pieceAt(state, from);
   if (!p || p.color !== state.turn) return [];
-  return pseudoMovesFrom(state, from).filter((m) => {
+  const pseudo = pseudoMovesFrom(state, from);
+  const out: Move[] = [];
+  const creator = state.portalCreators?.[p.color];
+  for (const m of pseudo) {
+    // Determine whether this move triggers a portal teleport.
+    // Portals trigger only in Portal Chess (state.portals defined),
+    // for any non-pawn piece that ISN'T the creator type, when its
+    // destination square hosts an active portal of either side.
+    const triggers =
+      state.portals &&
+      portalAt(state, m.to) !== null &&
+      p.type !== "P" &&
+      p.type !== creator;
+    if (triggers) {
+      const targets = teleportTargets(state, from, m.to, p);
+      for (const t of targets) {
+        const portalMove: Move = { ...m, isPortalEntry: true, portalTo: { ...t } };
+        const ns = makeMove(state, portalMove);
+        if (!inCheck(ns, p.color)) out.push(portalMove);
+      }
+      // If no valid targets, this landing is illegal in Portal Chess.
+      continue;
+    }
     const ns = makeMove(state, m);
-    return !inCheck(ns, p.color);
-  });
+    if (!inCheck(ns, p.color)) out.push(m);
+  }
+  return out;
 }
 
 export function allLegalMoves(state: GameState): Move[] {

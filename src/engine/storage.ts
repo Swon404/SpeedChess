@@ -1,4 +1,4 @@
-import type { GameState } from "./board";
+import type { GameState, PieceType } from "./board";
 
 const KEY = "speedchess.v1";
 const ACTIVE_KEY = "speedchess.v1.active";
@@ -225,7 +225,10 @@ export function getLeaderboard(store: Store): Profile[] {
 // ---------------------------------------------------------------------------
 
 export interface ActiveSession {
-  mode: { kind: "two-player" } | { kind: "bot"; level: number };
+  mode:
+    | { kind: "two-player" }
+    | { kind: "bot"; level: number }
+    | { kind: "portal"; opponent: "two-player" | { kind: "bot"; level: number }; creator: PieceType };
   players: { w: string; b: string };
   stack: GameState[]; // full history stack, so Undo still works
   timeLeft: number | null; // null === Infinity (timer off)
