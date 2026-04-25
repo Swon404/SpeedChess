@@ -41,35 +41,36 @@ export function playSound(name: SoundName, enabled = true) {
     else if (name === "loss")    { tone(392, 140, "sawtooth", 0.14); tone(311, 220, "sawtooth", 0.14, 140); }
     else if (name === "draw")    { tone(523, 120, "sine"); tone(523, 180, "sine", 0.12, 140); }
     else if (name === "teleport") {
-      // Sci-fi whoosh: rising sine sweep + shimmering descending sine, with
-      // a soft sawtooth tail. Total ~520ms, plays well over the visual demat.
+      // Sci-fi whoosh stretched to match the demat (~900ms) + delay (700ms)
+      // + remat (~900ms) visual: a rising sweep covers the demat, then a
+      // shimmering descent times with the remat onset, plus a soft tail.
       const c = getCtx();
       if (!c) return;
       const now = c.currentTime;
-      // Rising sweep: 220Hz -> 1320Hz over 220ms.
+      // Rising sweep: 180Hz -> 1320Hz over 700ms (matches demat).
       const o1 = c.createOscillator();
       const g1 = c.createGain();
       o1.type = "sine";
-      o1.frequency.setValueAtTime(220, now);
-      o1.frequency.exponentialRampToValueAtTime(1320, now + 0.22);
+      o1.frequency.setValueAtTime(180, now);
+      o1.frequency.exponentialRampToValueAtTime(1320, now + 0.70);
       g1.gain.setValueAtTime(0, now);
-      g1.gain.linearRampToValueAtTime(0.16, now + 0.02);
-      g1.gain.exponentialRampToValueAtTime(0.0005, now + 0.26);
+      g1.gain.linearRampToValueAtTime(0.16, now + 0.04);
+      g1.gain.exponentialRampToValueAtTime(0.0005, now + 0.80);
       o1.connect(g1).connect(c.destination);
-      o1.start(now); o1.stop(now + 0.30);
-      // Shimmering descent: 1760Hz -> 660Hz starting at 200ms.
+      o1.start(now); o1.stop(now + 0.84);
+      // Shimmering descent: 1760Hz -> 520Hz starting at 700ms, lasting 700ms.
       const o2 = c.createOscillator();
       const g2 = c.createGain();
       o2.type = "triangle";
-      o2.frequency.setValueAtTime(1760, now + 0.20);
-      o2.frequency.exponentialRampToValueAtTime(660, now + 0.46);
-      g2.gain.setValueAtTime(0, now + 0.20);
-      g2.gain.linearRampToValueAtTime(0.12, now + 0.22);
-      g2.gain.exponentialRampToValueAtTime(0.0005, now + 0.50);
+      o2.frequency.setValueAtTime(1760, now + 0.70);
+      o2.frequency.exponentialRampToValueAtTime(520, now + 1.40);
+      g2.gain.setValueAtTime(0, now + 0.70);
+      g2.gain.linearRampToValueAtTime(0.13, now + 0.74);
+      g2.gain.exponentialRampToValueAtTime(0.0005, now + 1.50);
       o2.connect(g2).connect(c.destination);
-      o2.start(now + 0.20); o2.stop(now + 0.54);
-      // Sub-bass tail.
-      tone(110, 180, "sawtooth", 0.07, 380);
+      o2.start(now + 0.70); o2.stop(now + 1.54);
+      // Sub-bass tail under the rematerialise.
+      tone(110, 380, "sawtooth", 0.07, 1100);
     }
   } catch { /* ignore */ }
 }

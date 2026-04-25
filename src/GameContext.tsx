@@ -243,10 +243,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setIsBotThinking(true);
     (async () => {
       try {
-        // Compute the bot move and ensure at least ~300ms have elapsed so the
-        // human's own sliding animation has time to play before the board
-        // re-renders with the bot's response.
-        const minThinkMs = 320;
+        // Compute the bot move and ensure enough time has elapsed so the
+        // human's own animation has time to play before the board re-renders
+        // with the bot's response. Teleport animations are longer (~1.6s)
+        // so we wait extra when the previous move was a portal entry.
+        const prevMove = state.history[state.history.length - 1];
+        const minThinkMs = prevMove?.isPortalEntry ? 1700 : 320;
         const t0 = performance.now();
         const move = await chooseBotMove(state, lvl);
         const elapsed = performance.now() - t0;
