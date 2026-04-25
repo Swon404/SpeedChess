@@ -35,7 +35,7 @@ const PICKS: Pick[] = [
   { type: "R", col: 0, row: 4 }, // Iron Golem head (rook)
   { type: "B", col: 2, row: 4 }, // Enderman
   { type: "N", col: 1, row: 4 }, // Skeleton
-  { type: "P", col: 0, row: 5 }  // Zombie row
+  { type: "P", col: 0, row: 6 }  // Zombie row
 ];
 
 async function main() {
@@ -68,11 +68,15 @@ async function main() {
   console.log(`Grid:   ${cols} cols \u00d7 ${rows} rows  (cell ${cellW}\u00d7${cellH})`);
 
   for (const pick of PICKS) {
-    const left = pick.col * cellW;
-    const top = pick.row * cellH;
+    // Inset slightly to avoid bleed from neighbouring cells.
+    const inset = Math.max(2, Math.floor(Math.min(cellW, cellH) * 0.04));
+    const left = pick.col * cellW + inset;
+    const top = pick.row * cellH + inset;
+    const w = cellW - inset * 2;
+    const h = cellH - inset * 2;
     const out = resolve(outDir, `${pick.type}.png`);
     await sharp(inputPath)
-      .extract({ left, top, width: cellW, height: cellH })
+      .extract({ left, top, width: w, height: h })
       .resize(256, 256, { kernel: "nearest" })
       .png()
       .toFile(out);

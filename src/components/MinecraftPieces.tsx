@@ -20,19 +20,18 @@ const FALLBACK: Record<PieceType, string> = {
 export function MinecraftPiece({ color, type }: Props) {
   const [errored, setErrored] = useState(false);
   const src = `${BASE}pieces/minecraft/${type}.png`;
-  const plateFill = color === "w" ? "#f5e7c8" : "#1f2a38";
-  const plateStroke = color === "w" ? "#c9a45a" : "#0d131c";
-  const rim = color === "w" ? "#ffffff" : "#475569";
+  // Side hint: a soft outer ring colored per team. The PNG itself already
+  // carries a Minecraft-style plate, so we don't overlay our own circle.
+  const ringColor = color === "w" ? "rgba(245, 231, 200, 0.85)" : "rgba(31, 42, 56, 0.9)";
+  const ringShadow = color === "w"
+    ? "0 0 0 2px rgba(201, 164, 90, 0.85), 0 2px 4px rgba(0,0,0,0.45)"
+    : "0 0 0 2px rgba(13, 19, 28, 0.9), 0 2px 4px rgba(0,0,0,0.55)";
 
   return (
     <span className={`mc-piece mc-piece-${color}`}>
       <span
-        className="mc-plate"
-        style={{
-          background: plateFill,
-          borderColor: plateStroke,
-          boxShadow: `inset 0 0 0 1px ${rim}33`
-        }}
+        className="mc-ring"
+        style={{ background: ringColor, boxShadow: ringShadow }}
       />
       {errored ? (
         <span className="mc-fallback" aria-hidden="true">{FALLBACK[type]}</span>
