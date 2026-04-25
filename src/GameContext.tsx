@@ -171,6 +171,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
         playSound("draw");
       } else if (isCheck) {
         playSound("check");
+      } else if (lastMove?.isPortalEntry) {
+        playSound("teleport");
       } else if (lastMove?.captured) {
         playSound("capture");
       } else {

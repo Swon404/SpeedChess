@@ -84,6 +84,10 @@ export function Board({ flipped = false }: Props) {
     : null;
   const wPortal = state.portals?.w ?? null;
   const bPortal = state.portals?.b ?? null;
+  const isTeleportMove =
+    !!lastMove?.isPortalEntry &&
+    !!lastMove.portalTo &&
+    !(lastMove.portalTo.file === lastMove.to.file && lastMove.portalTo.rank === lastMove.to.rank);
 
   return (
     <>
@@ -129,7 +133,9 @@ export function Board({ flipped = false }: Props) {
               const slideEnd = lastMove?.portalTo ?? lastMove?.to;
               const slideHere =
                 slideEnd && slideEnd.file === f && slideEnd.rank === r && lastMove && piece;
-              if (slideHere && lastMove && slideEnd) {
+              // Suppress the slide animation for teleport moves; we use a
+              // dematerialise/rematerialise effect instead.
+              if (slideHere && lastMove && slideEnd && !isTeleportMove) {
                 const df = lastMove.from.file - slideEnd.file;
                 const dr = slideEnd.rank - lastMove.from.rank;
                 const sign = flipped ? -1 : 1;
@@ -139,6 +145,17 @@ export function Board({ flipped = false }: Props) {
                 };
                 slideKey = `slide-${moveIndex}`;
               }
+              const isRematerializeHere =
+                isTeleportMove &&
+                lastMove?.portalTo &&
+                lastMove.portalTo.file === f &&
+                lastMove.portalTo.rank === r &&
+                piece;
+              const isDematerializeHere =
+                isTeleportMove &&
+                lastMove &&
+                lastMove.from.file === f &&
+                lastMove.from.rank === r;
 
               return (
                 <button
@@ -155,11 +172,26 @@ export function Board({ flipped = false }: Props) {
                   )}
                   {piece && (
                     <span
-                      key={slideKey}
-                      className={slideKey ? "piece-wrap piece-sliding" : "piece-wrap"}
+                      key={isRematerializeHere ? `remat-${moveIndex}` : slideKey}
+                      className={
+                        isRematerializeHere
+                          ? "piece-wrap piece-rematerialize"
+                          : slideKey
+                            ? "piece-wrap piece-sliding"
+                            : "piece-wrap"
+                      }
                       style={slideStyle}
                     >
                       <Piece color={piece.color} type={piece.type} set={pieceSet} />
+                    </span>
+                  )}
+                  {isDematerializeHere && lastMove && (
+                    <span
+                      key={`demat-${moveIndex}`}
+                      className="piece-wrap piece-dematerialize"
+                      aria-hidden="true"
+                    >
+                      <Piece color={lastMove.color} type={lastMove.piece} set={pieceSet} />
                     </span>
                   )}
                   {isLastTo && lastMove?.captured && store.settings.explodeOnCapture && (
