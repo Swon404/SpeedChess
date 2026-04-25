@@ -14,6 +14,7 @@ export function NewGameScreen() {
   // Portal Chess sub-options
   const [portalCreator, setPortalCreator] = useState<PieceType>("Q");
   const [portalOpponentKind, setPortalOpponentKind] = useState<"two-player" | "bot">("bot");
+  const [portalAdjacencyRule, setPortalAdjacencyRule] = useState<boolean>(false);
 
   const ensureProfile = (name: string): string => {
     const trimmed = name.trim();
@@ -44,12 +45,12 @@ export function NewGameScreen() {
       if (portalOpponentKind === "two-player") {
         const b = ensureProfile(blackName || "Player 2");
         newGame(
-          { kind: "portal", opponent: "two-player", creator: portalCreator },
+          { kind: "portal", opponent: "two-player", creator: portalCreator, adjacencyRule: portalAdjacencyRule },
           { w, b }
         );
       } else {
         newGame(
-          { kind: "portal", opponent: { kind: "bot", level }, creator: portalCreator },
+          { kind: "portal", opponent: { kind: "bot", level }, creator: portalCreator, adjacencyRule: portalAdjacencyRule },
           { w, b: `Bot Lv ${level}` }
         );
       }
@@ -109,6 +110,21 @@ export function NewGameScreen() {
               The nominated piece auto-drops a portal under itself after each move (if
               its side has no active portal yet). It does not teleport through portals
               itself. Pawns are excluded entirely &mdash; they never use portals.
+            </p>
+          </section>
+
+          <section>
+            <h3>House rules</h3>
+            <label>
+              <input type="checkbox"
+                checked={portalAdjacencyRule}
+                onChange={(e) => setPortalAdjacencyRule(e.target.checked)} />
+              {" "}Prevent teleport next to any piece
+            </label>
+            <p className="hint">
+              When ticked, teleport targets cannot be adjacent to any other piece.
+              When unticked (default), you can teleport anywhere empty &mdash; or stay
+              on the portal square (the portal remains active).
             </p>
           </section>
         </>

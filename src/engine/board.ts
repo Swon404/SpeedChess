@@ -56,6 +56,11 @@ export interface GameState {
    * Set when a Portal Chess game starts. Undefined = mode off.
    */
   portalCreators?: { w: PieceType; b: PieceType };
+  /**
+   * Portal Chess: optional house rule. When true, teleport targets cannot be
+   * adjacent to any other piece. When false/undefined, no adjacency check.
+   */
+  portalAdjacencyRule?: boolean;
 }
 
 export const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"] as const;
@@ -97,7 +102,8 @@ export function cloneState(s: GameState): GameState {
           b: s.portals.b ? { ...s.portals.b } : null
         }
       : undefined,
-    portalCreators: s.portalCreators ? { ...s.portalCreators } : undefined
+    portalCreators: s.portalCreators ? { ...s.portalCreators } : undefined,
+    portalAdjacencyRule: s.portalAdjacencyRule
   };
 }
 

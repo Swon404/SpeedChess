@@ -97,11 +97,13 @@ describe("Portal Chess: teleport entry", () => {
     }
   });
 
-  it("Teleport adjacency rule rejects targets next to any piece", () => {
+  it("Teleport adjacency rule rejects targets next to any piece (when enabled)", () => {
     // Build state: a single white knight on g1 (will teleport via portal at f3),
-    // a friendly pawn at b3 should block adjacents around itself.
+    // a friendly pawn at b3 should block adjacents around itself when the
+    // optional adjacency house rule is enabled.
     const s = asPortal(parseFEN("8/8/8/8/8/1P6/8/6N1 w - - 0 1"));
     s.portals = { w: null, b: parseSquare("f3") };
+    s.portalAdjacencyRule = true;
     const targets = teleportTargets(s, parseSquare("g1"), parseSquare("f3"), { type: "N", color: "w" });
     // a2,a3,a4,b2,b4,c2,c3,c4 are all adjacent to b3 -> excluded.
     const banned = ["a2", "a3", "a4", "b2", "b4", "c2", "c3", "c4"].map(parseSquare);
@@ -110,6 +112,14 @@ describe("Portal Chess: teleport entry", () => {
     }
     // A far square like h8 is allowed.
     expect(targets.some((t) => sqEq(t, parseSquare("h8")))).toBe(true);
+  });
+
+  it("With adjacency rule OFF (default), targets next to other pieces are allowed", () => {
+    const s = asPortal(parseFEN("8/8/8/8/8/1P6/8/6N1 w - - 0 1"));
+    s.portals = { w: null, b: parseSquare("f3") };
+    const targets = teleportTargets(s, parseSquare("g1"), parseSquare("f3"), { type: "N", color: "w" });
+    // c2 is adjacent to b3; with the rule off it's permitted.
+    expect(targets.some((t) => sqEq(t, parseSquare("c2")))).toBe(true);
   });
 
   it("Teleport that leaves own king in check is illegal", () => {
@@ -157,8 +167,10 @@ describe("Portal Chess: creator pass-through and capture-then-teleport", () => {
     // White N at g1, black portal at f3 with a black pawn sitting on f3.
     const s = asPortal(parseFEN("8/8/8/8/8/5p2/8/6N1 w - - 0 1"));
     s.portals = { w: null, b: parseSquare("f3") };
+    // Pick a non-stay teleport variant so the portal is consumed.
     const moves = legalMovesFrom(s, parseSquare("g1"))
-      .filter((m) => sqEq(m.to, parseSquare("f3")));
+      .filter((m) => sqEq(m.to, parseSquare("f3"))
+        && m.portalTo && !sqEq(m.portalTo, parseSquare("f3")));
     expect(moves.length).toBeGreaterThan(0);
     expect(moves[0].captured).toBe("P");
     expect(moves[0].isPortalEntry).toBe(true);
@@ -172,6 +184,19 @@ describe("Portal Chess: creator pass-through and capture-then-teleport", () => {
     let pawnCount = 0;
     for (const row of ns.board) for (const p of row) if (p?.type === "P" && p.color === "b") pawnCount++;
     expect(pawnCount).toBe(0);
+  });
+
+  it("Stay-in-place teleport: piece can choose portal square as target; portal stays active", () => {
+    const s = asPortal(parseFEN("8/8/8/8/8/8/8/6N1 w - - 0 1"));
+    s.portals = { w: null, b: parseSquare("f3") };
+    const stayMove = legalMovesFrom(s, parseSquare("g1"))
+      .find((m) => m.isPortalEntry && m.portalTo && sqEq(m.portalTo, parseSquare("f3")));
+    expect(stayMove).toBeDefined();
+    const ns = makeMove(s, stayMove!);
+    // Knight ends on f3 (the portal square).
+    expect(ns.board[2][5]).toEqual({ type: "N", color: "w" });
+    // Portal remains active.
+    expect(ns.portals?.b).toEqual(parseSquare("f3"));
   });
 });
 

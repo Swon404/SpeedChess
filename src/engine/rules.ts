@@ -38,11 +38,13 @@ function sqColor(sq: Square): "light" | "dark" {
 
 /**
  * Portal Chess: enumerate squares the `mover` could teleport to from `portalSq`.
- * Rules: target is empty, all 8 neighbours empty (treating `fromSq` and
- * `portalSq` as empty), bishops restricted to same-colour as the portal
- * square, and the move must not leave the mover's king in check.
- * Caller is responsible for the king-safety check (we only filter geometry
- * here so the checker can simulate the full move via makeMove).
+ * Geometry rules (king-safety filtered separately by caller via makeMove):
+ *   - Target may be the portal square itself (stay-in-place option). The
+ *     portal stays active in this case (handled in makeMove).
+ *   - Otherwise: target is empty.
+ *   - Bishops are restricted to the same colour as the portal square.
+ *   - If `state.portalAdjacencyRule` is true, the target may not be adjacent
+ *     to any other piece (treating `fromSq` and `portalSq` as empty).
  */
 export function teleportTargets(
   state: GameState,
@@ -53,23 +55,30 @@ export function teleportTargets(
   const out: Square[] = [];
   const portalCol = sqColor(portalSq);
   const isExempt = (sq: Square) => sqEq(sq, fromSq) || sqEq(sq, portalSq);
+  // Stay-in-place: the portal square itself is always a valid target. The
+  // bishop colour rule is trivially satisfied (same square as the portal).
+  out.push({ ...portalSq });
+  const adjacency = state.portalAdjacencyRule === true;
   for (let r = 0; r < 8; r++) {
     for (let f = 0; f < 8; f++) {
       const sq = { file: f, rank: r };
       if (isExempt(sq)) continue;
       if (state.board[r][f]) continue;
       if (mover.type === "B" && sqColor(sq) !== portalCol) continue;
-      let ok = true;
-      for (let dr = -1; dr <= 1 && ok; dr++) {
-        for (let df = -1; df <= 1 && ok; df++) {
-          if (dr === 0 && df === 0) continue;
-          const nb = { file: f + df, rank: r + dr };
-          if (!inBounds(nb)) continue;
-          if (isExempt(nb)) continue;
-          if (state.board[nb.rank][nb.file]) ok = false;
+      if (adjacency) {
+        let ok = true;
+        for (let dr = -1; dr <= 1 && ok; dr++) {
+          for (let df = -1; df <= 1 && ok; df++) {
+            if (dr === 0 && df === 0) continue;
+            const nb = { file: f + df, rank: r + dr };
+            if (!inBounds(nb)) continue;
+            if (isExempt(nb)) continue;
+            if (state.board[nb.rank][nb.file]) ok = false;
+          }
         }
+        if (!ok) continue;
       }
-      if (ok) out.push(sq);
+      out.push(sq);
     }
   }
   return out;
@@ -288,11 +297,16 @@ export function makeMove(state: GameState, move: Move): GameState {
   ns.board[move.to.rank][move.to.file] = null;
 
   // Portal Chess: portal entry consumes the portal at `to` and the piece
-  // teleports to `portalTo` instead of staying at `to`.
+  // teleports to `portalTo` instead of staying at `to`. Exception: if the
+  // chosen target IS the portal square itself, the piece "stays" on the
+  // portal and the portal remains active.
   let landing: Square = move.to;
   if (move.isPortalEntry && move.portalTo && ns.portals) {
-    const owner = portalAt(ns, move.to);
-    if (owner) ns.portals[owner] = null;
+    const stayed = sqEq(move.portalTo, move.to);
+    if (!stayed) {
+      const owner = portalAt(ns, move.to);
+      if (owner) ns.portals[owner] = null;
+    }
     landing = move.portalTo;
   }
 

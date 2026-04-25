@@ -274,7 +274,7 @@ section label { display: block; margin: 6px 0; }
   height: 100%;
 }
 .piece-sliding {
-  animation: piece-slide 220ms ease-out;
+  animation: piece-slide 480ms cubic-bezier(0.22, 0.61, 0.36, 1);
   will-change: transform;
 }
 @keyframes piece-slide {

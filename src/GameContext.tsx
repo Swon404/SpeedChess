@@ -21,14 +21,15 @@ import {
 type Mode =
   | { kind: "two-player" }
   | { kind: "bot"; level: number }
-  | { kind: "portal"; opponent: "two-player" | { kind: "bot"; level: number }; creator: PieceType };
+  | { kind: "portal"; opponent: "two-player" | { kind: "bot"; level: number }; creator: PieceType; adjacencyRule?: boolean };
 export interface Players { w: string; b: string; }
 
 /** Build the initial state for Portal Chess (creator-type portals). */
-function portalInitialState(creator: PieceType): GameState {
+function portalInitialState(creator: PieceType, adjacencyRule = false): GameState {
   const s = initialState();
   s.portals = { w: null, b: null };
   s.portalCreators = { w: creator, b: creator };
+  s.portalAdjacencyRule = adjacencyRule;
   return s;
 }
 
@@ -361,7 +362,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
           ? `Bot Lv ${m.opponent.level}`
           : "Player 2";
     setPlayers({ w: p?.w ?? defaultW, b: p?.b ?? defaultB });
-    const fresh = m.kind === "portal" ? portalInitialState(m.creator) : initialState();
+    const fresh = m.kind === "portal" ? portalInitialState(m.creator, m.adjacencyRule === true) : initialState();
     dispatch({ type: "new", initial: fresh });
     setSelected(null);
     setPaused(false);
