@@ -38,13 +38,13 @@ function sqColor(sq: Square): "light" | "dark" {
 
 /**
  * Portal Chess: enumerate squares the `mover` could teleport to from `portalSq`.
- * Geometry rules (king-safety filtered separately by caller via makeMove):
- *   - Target may be the portal square itself (stay-in-place option). The
- *     portal stays active in this case (handled in makeMove).
- *   - Otherwise: target is empty.
- *   - Bishops are restricted to the same colour as the portal square.
- *   - If `state.portalAdjacencyRule` is true, the target may not be adjacent
- *     to any other piece (treating `fromSq` and `portalSq` as empty).
+ * Pure geometry: target may be the portal square itself (stay-in-place,
+ * portal stays active in makeMove) or any empty square. Bishops are
+ * restricted to the same colour as the portal square.
+ *
+ * The optional adjacency house rule is NOT applied here — it's enforced in
+ * `legalMovesFrom` with an exception: targets that deliver check to the
+ * opponent bypass the adjacency restriction.
  */
 export function teleportTargets(
   state: GameState,
@@ -55,33 +55,42 @@ export function teleportTargets(
   const out: Square[] = [];
   const portalCol = sqColor(portalSq);
   const isExempt = (sq: Square) => sqEq(sq, fromSq) || sqEq(sq, portalSq);
-  // Stay-in-place: the portal square itself is always a valid target. The
-  // bishop colour rule is trivially satisfied (same square as the portal).
+  // Stay-in-place: the portal square itself is always a valid target.
   out.push({ ...portalSq });
-  const adjacency = state.portalAdjacencyRule === true;
   for (let r = 0; r < 8; r++) {
     for (let f = 0; f < 8; f++) {
       const sq = { file: f, rank: r };
       if (isExempt(sq)) continue;
       if (state.board[r][f]) continue;
       if (mover.type === "B" && sqColor(sq) !== portalCol) continue;
-      if (adjacency) {
-        let ok = true;
-        for (let dr = -1; dr <= 1 && ok; dr++) {
-          for (let df = -1; df <= 1 && ok; df++) {
-            if (dr === 0 && df === 0) continue;
-            const nb = { file: f + df, rank: r + dr };
-            if (!inBounds(nb)) continue;
-            if (isExempt(nb)) continue;
-            if (state.board[nb.rank][nb.file]) ok = false;
-          }
-        }
-        if (!ok) continue;
-      }
       out.push(sq);
     }
   }
   return out;
+}
+
+/**
+ * Portal Chess: returns true if `target` is adjacent to any piece on the
+ * board, treating `fromSq` and `portalSq` as empty (they are vacated by the
+ * teleport). Used to enforce the optional adjacency house rule.
+ */
+function teleportIsAdjacentToPiece(
+  state: GameState,
+  target: Square,
+  fromSq: Square,
+  portalSq: Square
+): boolean {
+  const isExempt = (sq: Square) => sqEq(sq, fromSq) || sqEq(sq, portalSq) || sqEq(sq, target);
+  for (let dr = -1; dr <= 1; dr++) {
+    for (let df = -1; df <= 1; df++) {
+      if (dr === 0 && df === 0) continue;
+      const nb = { file: target.file + df, rank: target.rank + dr };
+      if (!inBounds(nb)) continue;
+      if (isExempt(nb)) continue;
+      if (state.board[nb.rank][nb.file]) return true;
+    }
+  }
+  return false;
 }
 
 function add(sq: Square, d: Dir): Square {
@@ -414,10 +423,19 @@ export function legalMovesFrom(state: GameState, from: Square): Move[] {
       p.type !== creator;
     if (triggers) {
       const targets = teleportTargets(state, from, m.to, p);
+      const adjacency = state.portalAdjacencyRule === true;
       for (const t of targets) {
         const portalMove: Move = { ...m, isPortalEntry: true, portalTo: { ...t } };
         const ns = makeMove(state, portalMove);
-        if (!inCheck(ns, p.color)) out.push(portalMove);
+        if (inCheck(ns, p.color)) continue; // own king must not be in check
+        if (adjacency && !sqEq(t, m.to)) {
+          // Adjacency house rule: only enforce when not landing on the
+          // portal square itself (stay-in-place is always allowed). Targets
+          // that deliver check to the opponent bypass the adjacency rule.
+          const adjacent = teleportIsAdjacentToPiece(state, t, from, m.to);
+          if (adjacent && !inCheck(ns, opposite(p.color))) continue;
+        }
+        out.push(portalMove);
       }
       // If no valid targets, this landing is illegal in Portal Chess.
       continue;

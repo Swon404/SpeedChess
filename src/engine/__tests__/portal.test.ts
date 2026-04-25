@@ -98,20 +98,35 @@ describe("Portal Chess: teleport entry", () => {
   });
 
   it("Teleport adjacency rule rejects targets next to any piece (when enabled)", () => {
-    // Build state: a single white knight on g1 (will teleport via portal at f3),
-    // a friendly pawn at b3 should block adjacents around itself when the
-    // optional adjacency house rule is enabled.
-    const s = asPortal(parseFEN("8/8/8/8/8/1P6/8/6N1 w - - 0 1"));
+    // White king a1, white knight h4 (can reach portal at f3), pawn at b3,
+    // black king h8 (far). Adjacency rule on -> teleport target adjacent to
+    // b3 must be excluded; far empty squares like e6 must be allowed.
+    const s = asPortal(parseFEN("7k/8/8/8/7N/1P6/8/K7 w - - 0 1"));
     s.portals = { w: null, b: parseSquare("f3") };
     s.portalAdjacencyRule = true;
-    const targets = teleportTargets(s, parseSquare("g1"), parseSquare("f3"), { type: "N", color: "w" });
-    // a2,a3,a4,b2,b4,c2,c3,c4 are all adjacent to b3 -> excluded.
-    const banned = ["a2", "a3", "a4", "b2", "b4", "c2", "c3", "c4"].map(parseSquare);
-    for (const b of banned) {
-      expect(targets.some((t) => sqEq(t, b))).toBe(false);
+    const moves = legalMovesFrom(s, parseSquare("h4"))
+      .filter((m) => sqEq(m.to, parseSquare("f3")) && m.portalTo);
+    const targets = moves.map((m) => m.portalTo!);
+    // Squares adjacent to b3 (and not to any other piece) -> excluded.
+    for (const name of ["a2", "a4", "b2", "b4", "c2", "c4"]) {
+      expect(targets.some((t) => sqEq(t, parseSquare(name)))).toBe(false);
     }
-    // A far square like h8 is allowed.
-    expect(targets.some((t) => sqEq(t, parseSquare("h8")))).toBe(true);
+    // A far empty square (no adjacent piece) is allowed.
+    expect(targets.some((t) => sqEq(t, parseSquare("e6")))).toBe(true);
+  });
+
+  it("Adjacency rule is bypassed when the teleport delivers check", () => {
+    // Black king e8, black pawn e7, white knight h6, portal at g4,
+    // white king a1. Knight Nh6-g4 lands on portal; teleport target f6 is
+    // adjacent to the e7 pawn (forbidden by adjacency rule) but f6 delivers
+    // a knight check on e8, so the move IS legal.
+    const s = asPortal(parseFEN("4k3/4p3/7N/8/8/8/8/K7 w - - 0 1"));
+    s.portals = { w: null, b: parseSquare("g4") };
+    s.portalAdjacencyRule = true;
+    const moves = legalMovesFrom(s, parseSquare("h6"))
+      .filter((m) => sqEq(m.to, parseSquare("g4")) && m.portalTo
+        && sqEq(m.portalTo, parseSquare("f6")));
+    expect(moves.length).toBe(1);
   });
 
   it("With adjacency rule OFF (default), targets next to other pieces are allowed", () => {
