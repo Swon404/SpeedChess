@@ -1,9 +1,14 @@
 import type { ReactElement } from "react";
 import type { Color, PieceType } from "../engine/board";
 
-// Pixel-art faces of Minecraft characters. 12x12 grid, '.' = transparent.
-// Same artwork is shown for both colors; the colored plate behind the face
-// indicates the side.
+// Minecraft-styled pixel-art pieces inspired by the "Light Team Tokens"
+// reference: blocky faces with shading, royals wear gold/iron crowns, and
+// the rook is a cobblestone block. 14x14 grid gives room for detail while
+// staying readable at small board sizes.
+//
+// Same artwork is rendered for both colors. The plate behind the face
+// indicates the side: cream + gold rim for white, dark slate + steel rim
+// for black.
 
 type Palette = Record<string, string>;
 
@@ -13,150 +18,169 @@ interface IconDef {
   label: string;
 }
 
-const STEVE: IconDef = {
-  label: "Steve",
+const STEVE_KING: IconDef = {
+  label: "Steve King",
   grid: [
-    "............",
-    ".HHHHHHHHHH.",
-    ".HHHHHHHHHH.",
-    ".HssssssssH.",
-    ".sswwBBwwss.",
-    ".sswwBBwwss.",
-    ".ssssssssss.",
-    ".sbbbbbbbbs.",
-    ".sbbsssbbbs.",
-    ".ssbbbbbbss.",
-    ".sssssssss..",
-    "............"
+    "..............",
+    "....yYyYyY....",   // gold crown spikes
+    "...YyYyYyYy...",
+    "...YjYjYjYj...",   // crown band w/ jewels
+    "...HHHHHHHH...",   // hair line
+    "..HHHHHHHHHH..",
+    "..HssssssssH..",
+    "..sswwBBwwss..",
+    "..sswwBBwwss..",
+    "..ssssssssss..",
+    "..sbbsssbbbs..",
+    "..ssbbbbbbss..",
+    "...ssssssss...",
+    ".............."
   ],
   palette: {
-    H: "#3a2410",   // dark brown hair
-    s: "#f0b88a",   // skin
-    w: "#ffffff",   // eye white
-    B: "#3a6df0",   // blue iris
-    b: "#5a3a1a"    // beard / mustache
-  }
-};
-
-const ALEX: IconDef = {
-  label: "Alex",
-  grid: [
-    "............",
-    "..oooooooo..",
-    ".oooooooooo.",
-    ".oosssssooo.",
-    ".oswwGGwwso.",
-    ".oswwGGwwso.",
-    ".ossssssss..",
-    ".ossssssso..",
-    ".ossmmmmsoo.",
-    ".oossssoooo.",
-    ".oo......oo.",
-    "............"
-  ],
-  palette: {
-    o: "#d27535",   // long orange hair
+    y: "#ffd84a",
+    Y: "#e6b91a",
+    j: "#39c4ff",   // sapphire
+    H: "#3a2410",
     s: "#f0b88a",
     w: "#ffffff",
-    G: "#2da34a",   // green iris
-    m: "#c9655d"    // lips
+    B: "#3a6df0",
+    b: "#5a3a1a"
   }
 };
 
-const CREEPER: IconDef = {
-  label: "Creeper",
+const ALEX_QUEEN: IconDef = {
+  label: "Alex Queen",
   grid: [
-    "............",
-    ".gGGgggggGg.",
-    ".gggggggggg.",
-    ".gGggggggGg.",
-    ".kkggggggkk.",
-    ".kkggggggkk.",
-    ".gggggggggg.",
-    ".gggkkkkggg.",
-    ".gggkkkkggg.",
-    ".ggkkggkkgg.",
-    ".ggkkggkkgg.",
-    "............"
+    "..............",
+    "....yYyYyY....",
+    "...YjYyYjYy...",
+    "...YYYYYYYY...",
+    "..ooooooooo...",
+    ".oooooooooooo.",
+    ".oosssssssooo.",
+    ".oswwGGwwsoo..",
+    ".oswwGGwwsoo..",
+    ".oossssssooo..",
+    ".ooosmmmmsoo..",
+    ".oossssssoo...",
+    "..oo......o...",
+    ".............."
   ],
   palette: {
-    g: "#6bba4a",   // light creeper green
-    G: "#4f8f33",   // darker green pixels (texture)
-    k: "#1a1a1a"    // black eyes/mouth
+    y: "#ffd84a",
+    Y: "#e6b91a",
+    j: "#ff5fa3",   // pink jewel for queen
+    o: "#d27535",
+    s: "#f0b88a",
+    w: "#ffffff",
+    G: "#2da34a",
+    m: "#c9655d"
+  }
+};
+
+const ROOK_BLOCK: IconDef = {
+  label: "Cobblestone",
+  grid: [
+    "..............",
+    "..ssSsSssSss..",
+    ".sSssSsssSSss.",
+    ".SssSsSSsSsSs.",
+    ".sSsdsSsSdSsS.",
+    ".sSSsSsSdSsSs.",
+    ".SsSsSsSsSsSs.",
+    ".sSdsSdsSsSsS.",
+    ".SsSsSsSsSsSs.",
+    ".sSsSsdSsSsSs.",
+    ".SsSsSsSsSsSs.",
+    ".sSsSdSsSsSsS.",
+    "..SsSsSsSsSs..",
+    ".............."
+  ],
+  palette: {
+    s: "#9aa0a8",   // light cobble
+    S: "#6f7681",   // mid cobble
+    d: "#3f444c"    // dark crevices
   }
 };
 
 const ENDERMAN: IconDef = {
   label: "Enderman",
   grid: [
-    "............",
-    ".kkkkkkkkkk.",
-    ".kkkkkkkkkk.",
-    ".kkkkkkkkkk.",
-    ".kPPPkkPPPk.",
-    ".kPPPkkPPPk.",
-    ".kkkkkkkkkk.",
-    ".kkkkkkkkkk.",
-    ".kkkkkkkkkk.",
-    ".kkkkkkkkkk.",
-    ".kkkkkkkkkk.",
-    "............"
+    "..............",
+    "..kkkkkkkkkk..",
+    ".kkkkkkkkkkkk.",
+    ".kkkkkkkkkkkk.",
+    ".kkkkkkkkkkkk.",
+    ".kPPPPkkPPPPk.",
+    ".kPpPPkkPPpPk.",
+    ".kPPPPkkPPPPk.",
+    ".kkkkkkkkkkkk.",
+    ".kkkkkkkkkkkk.",
+    ".kkkkkkkkkkkk.",
+    ".kkkkkkkkkkkk.",
+    "..kkkkkkkkkk..",
+    ".............."
   ],
   palette: {
-    k: "#0e0a18",   // near-black
-    P: "#d57bff"    // purple glow eyes
+    k: "#0e0a18",
+    P: "#d57bff",
+    p: "#ffe6ff"   // glow highlight
   }
 };
 
 const SKELETON: IconDef = {
   label: "Skeleton",
   grid: [
-    "............",
-    "..wwwwwwww..",
-    ".wwwwwwwwww.",
-    ".wwwwwwwwww.",
-    ".wwkkwwkkww.",
-    ".wwkkwwkkww.",
-    ".wwwwwwwwww.",
-    ".wwkwkwkwww.",
-    ".wwwwwwwwww.",
-    ".wwwwwwwwww.",
-    "..wwwwwwww..",
-    "............"
+    "..............",
+    "...wwwwwwww...",
+    "..wwwwwwwwww..",
+    ".wwwwwwwwwwww.",
+    ".wwwwwwwwwwww.",
+    ".wwkkkwwkkkww.",
+    ".wwkkkwwkkkww.",
+    ".wwwwwwwwwwww.",
+    ".wwwkwkwkwwww.",
+    ".wwwkwkwkwwww.",
+    ".wwwwwwwwwwww.",
+    "..wwwwwwwwww..",
+    "...wwwwwwww...",
+    ".............."
   ],
   palette: {
-    w: "#dedccf",   // bone white
-    k: "#101010"    // sockets / teeth gaps
+    w: "#dedccf",
+    k: "#101010"
   }
 };
 
 const ZOMBIE: IconDef = {
   label: "Zombie",
   grid: [
-    "............",
-    "..gggggggg..",
-    ".gggggggggg.",
-    ".gGGgggggGg.",
-    ".ggkkggkkgg.",
-    ".ggkkggkkgg.",
-    ".gggggggggg.",
-    ".gggGGGGggg.",
-    ".ggGgkkgGgg.",
-    ".gggggggggg.",
-    "..gggggggg..",
-    "............"
+    "..............",
+    "...gggggggg...",
+    "..ggggggggGG..",
+    ".gggGggggGgGg.",
+    ".ggGGggggGggg.",
+    ".ggkkggggkkgg.",
+    ".ggkkggggkkgg.",
+    ".gggggggggggG.",
+    ".gggGGggGGggg.",
+    ".ggGgkkkkgGgg.",
+    ".gggggggggggg.",
+    "..ggggggggGg..",
+    "...gggggggg...",
+    ".............."
   ],
   palette: {
-    g: "#4c8a4a",   // zombie green
-    G: "#37663a",   // shading / scars
-    k: "#0a0a0a"    // eyes / mouth
+    g: "#4c8a4a",
+    G: "#37663a",
+    k: "#0a0a0a"
   }
 };
 
 const ICONS: Record<PieceType, IconDef> = {
-  K: STEVE,
-  Q: ALEX,
-  R: CREEPER,
+  K: STEVE_KING,
+  Q: ALEX_QUEEN,
+  R: ROOK_BLOCK,
   B: ENDERMAN,
   N: SKELETON,
   P: ZOMBIE
@@ -192,13 +216,13 @@ export function MinecraftPiece({ color, type }: Props) {
   return (
     <svg
       className={`mc-piece mc-piece-${color}`}
-      viewBox="0 0 12 12"
+      viewBox="0 0 14 14"
       role="img"
       aria-label={`${color === "w" ? "White" : "Black"} ${def.label}`}
       shapeRendering="crispEdges"
     >
-      <circle cx={6} cy={6} r={5.85} fill={plateFill} stroke={plateStroke} strokeWidth={0.35} />
-      <circle cx={6} cy={6} r={5.85} fill="none" stroke={rim} strokeWidth={0.18} opacity={0.7} />
+      <circle cx={7} cy={7} r={6.85} fill={plateFill} stroke={plateStroke} strokeWidth={0.4} />
+      <circle cx={7} cy={7} r={6.85} fill="none" stroke={rim} strokeWidth={0.2} opacity={0.7} />
       {renderGrid(def)}
     </svg>
   );
