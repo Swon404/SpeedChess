@@ -262,16 +262,10 @@ section label { display: block; margin: 6px 0; }
   border-width: 1px;
   border-style: solid;
 }
-.mc-ring {
-  position: absolute;
-  inset: 8%;
-  border-radius: 50%;
-  opacity: 0.0; /* invisible, only the box-shadow ring shows */
-}
 .mc-img {
   position: relative;
-  width: 96%;
-  height: 96%;
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   image-rendering: pixelated;
   user-select: none;
