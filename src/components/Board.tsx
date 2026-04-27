@@ -82,8 +82,8 @@ export function Board({ flipped = false }: Props) {
   const checkedKing = result.kind === "ongoing" && inCheck(state, state.turn)
     ? findKing(state, state.turn)
     : null;
-  const wPortal = state.portals?.w ?? null;
-  const bPortal = state.portals?.b ?? null;
+  const wPortals = state.portals?.w ?? [];
+  const bPortals = state.portals?.b ?? [];
   const isTeleportMove =
     !!lastMove?.isPortalEntry &&
     !!lastMove.portalTo &&
@@ -107,8 +107,8 @@ export function Board({ flipped = false }: Props) {
               const isChecked = checkedKing && checkedKing.file === f && checkedKing.rank === r;
               const isHintFrom = hint && hint.from.file === f && hint.from.rank === r;
               const isHintTo = hint && hint.to.file === f && hint.to.rank === r;
-              const isPortalW = wPortal && wPortal.file === f && wPortal.rank === r;
-              const isPortalB = bPortal && bPortal.file === f && bPortal.rank === r;
+              const isPortalW = wPortals.some((p) => p.file === f && p.rank === r);
+              const isPortalB = bPortals.some((p) => p.file === f && p.rank === r);
               const isTeleportTarget =
                 portalChoice && portalChoice.targets.some(
                   (m) => m.portalTo && m.portalTo.file === f && m.portalTo.rank === r

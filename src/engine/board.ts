@@ -47,10 +47,11 @@ export interface GameState {
   // Rolling list of position keys for threefold-repetition detection.
   positionKeys: string[];
   /**
-   * Portal Chess: per-side active portal location (or null for none).
-   * Undefined disables portal mode entirely (default for normal chess).
+   * Portal Chess: per-side active portal locations (0..max). Empty array =
+   * no active portals for that side. Undefined `portals` disables portal
+   * mode entirely (default for normal chess).
    */
-  portals?: { w: Square | null; b: Square | null };
+  portals?: { w: Square[]; b: Square[]; max: number };
   /**
    * Portal Chess: which piece type creates portals for each side.
    * Set when a Portal Chess game starts. Undefined = mode off.
@@ -98,8 +99,9 @@ export function cloneState(s: GameState): GameState {
     positionKeys: (s.positionKeys ?? []).slice(),
     portals: s.portals
       ? {
-          w: s.portals.w ? { ...s.portals.w } : null,
-          b: s.portals.b ? { ...s.portals.b } : null
+          w: s.portals.w.map((p) => ({ ...p })),
+          b: s.portals.b.map((p) => ({ ...p })),
+          max: s.portals.max
         }
       : undefined,
     portalCreators: s.portalCreators ? { ...s.portalCreators } : undefined,
@@ -153,9 +155,14 @@ export function positionKey(s: GameState): string {
   const ep = s.enPassant ? `${s.enPassant.file}${s.enPassant.rank}` : "-";
   let portalKey = "";
   if (s.portals) {
-    const wp = s.portals.w ? `${s.portals.w.file}${s.portals.w.rank}` : "-";
-    const bp = s.portals.b ? `${s.portals.b.file}${s.portals.b.rank}` : "-";
-    portalKey = `|P${wp}${bp}`;
+    const enc = (arr: Square[]) =>
+      arr.length === 0
+        ? "-"
+        : arr
+            .map((p) => `${p.file}${p.rank}`)
+            .sort()
+            .join(",");
+    portalKey = `|P${enc(s.portals.w)};${enc(s.portals.b)}`;
   }
   return `${b}|${s.turn}|${c}|${ep}${portalKey}`;
 }

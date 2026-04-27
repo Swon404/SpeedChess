@@ -4,7 +4,7 @@ import { allLegalMoves, legalMovesFrom, makeMove, teleportTargets } from "../rul
 
 /** Wrap a state into Portal Chess mode with given creator type. */
 function asPortal(s: GameState, creator: "Q" | "R" | "B" | "N" | "K" = "Q"): GameState {
-  s.portals = { w: null, b: null };
+  s.portals = { w: [], b: [], max: 1 };
   s.portalCreators = { w: creator, b: creator };
   return s;
 }
@@ -29,10 +29,10 @@ describe("Portal Chess: portal creation", () => {
   it("Queen drops a portal under herself on her first move", () => {
     let s = asPortal(initialState());
     s = play(s, "d2", "d3"); // pawn move, no portal
-    expect(s.portals?.w).toBeNull();
+    expect(s.portals?.w).toEqual([]);
     s = play(s, "e7", "e6"); // black pawn
     s = play(s, "d1", "d2"); // Qd2 legal
-    expect(s.portals?.w).toEqual({ file: 3, rank: 1 });
+    expect(s.portals?.w).toEqual([{ file: 3, rank: 1 }]);
   });
 
   it("Queen does NOT drop a second portal while one is active", () => {
@@ -42,18 +42,18 @@ describe("Portal Chess: portal creation", () => {
     s = play(s, "d1", "d2"); // first portal at d2
     s = play(s, "e6", "e5"); // black tempo
     s = play(s, "d2", "e3"); // queen moves; no new portal because one is active
-    expect(s.portals?.w).toEqual({ file: 3, rank: 1 }); // still at d2
+    expect(s.portals?.w).toEqual([{ file: 3, rank: 1 }]); // still at d2
   });
 
   it("Pawn landing on a portal does not consume it and does not teleport", () => {
     // Custom position: white pawn at e4, black portal at e5, black to move skipped.
     const s = asPortal(parseFEN("8/8/8/4p3/4P3/8/8/8 w - - 0 1"));
     // Manually place a black portal at e5 via state hack (no creator move yet).
-    s.portals = { w: null, b: parseSquare("e5") };
+    s.portals = { w: [], b: [parseSquare("e5")], max: 1 };
     s.turn = "w";
     // White pawn at e4 cannot capture e5 (same file). Switch to a portal at d5
     // so the pawn captures into it.
-    s.portals = { w: null, b: parseSquare("d5") };
+    s.portals = { w: [], b: [parseSquare("d5")], max: 1 };
     s.board[4][3] = { type: "P", color: "b" };
     const moves = legalMovesFrom(s, parseSquare("e4"));
     const cap = moves.filter((m) => m.to.file === 3 && m.to.rank === 4);
@@ -62,7 +62,7 @@ describe("Portal Chess: portal creation", () => {
     expect(cap.every((m) => !m.isPortalEntry)).toBe(true);
     // The portal also persists after the pawn move.
     const ns = makeMove(s, cap[0]);
-    expect(ns.portals?.b).toEqual(parseSquare("d5"));
+    expect(ns.portals?.b).toEqual([parseSquare("d5")]);
   });
 });
 
@@ -70,7 +70,7 @@ describe("Portal Chess: teleport entry", () => {
   it("Knight landing on a portal is forced to teleport", () => {
     // Place a black portal at f3, white knight on g1, no other obstructions.
     const s = asPortal(parseFEN("8/8/8/8/8/8/8/6N1 w - - 0 1"));
-    s.portals = { w: null, b: parseSquare("f3") };
+    s.portals = { w: [], b: [parseSquare("f3")], max: 1 };
     const moves = legalMovesFrom(s, parseSquare("g1"));
     const fMoves = moves.filter((m) => m.to.file === 5 && m.to.rank === 2);
     expect(fMoves.length).toBeGreaterThan(0);
@@ -81,10 +81,10 @@ describe("Portal Chess: teleport entry", () => {
   it("Bishop teleport is restricted to same-colour squares as the portal", () => {
     // Place a portal at e4 (light square). Bishop must teleport to a light square only.
     const s = asPortal(parseFEN("8/8/8/8/8/8/8/4B3 w - - 0 1"));
-    s.portals = { w: null, b: parseSquare("e4") };
+    s.portals = { w: [], b: [parseSquare("e4")], max: 1 };
     // First move bishop e1 -> e4? bishops can't move file-only. Use diagonal.
     // Place bishop at h1 and portal at a8 (both light)? Let's pick portal at d3 (dark).
-    s.portals = { w: null, b: parseSquare("d3") };
+    s.portals = { w: [], b: [parseSquare("d3")], max: 1 };
     s.board[0][4] = null;
     s.board[0][5] = { type: "B", color: "w" }; // Bf1
     const moves = legalMovesFrom(s, parseSquare("f1")).filter((m) => sqEq(m.to, parseSquare("d3")));
@@ -102,7 +102,7 @@ describe("Portal Chess: teleport entry", () => {
     // black king h8 (far). Adjacency rule on -> teleport target adjacent to
     // b3 must be excluded; far empty squares like e6 must be allowed.
     const s = asPortal(parseFEN("7k/8/8/8/7N/1P6/8/K7 w - - 0 1"));
-    s.portals = { w: null, b: parseSquare("f3") };
+    s.portals = { w: [], b: [parseSquare("f3")], max: 1 };
     s.portalAdjacencyRule = true;
     const moves = legalMovesFrom(s, parseSquare("h4"))
       .filter((m) => sqEq(m.to, parseSquare("f3")) && m.portalTo);
@@ -121,7 +121,7 @@ describe("Portal Chess: teleport entry", () => {
     // adjacent to the e7 pawn (forbidden by adjacency rule) but f6 delivers
     // a knight check on e8, so the move IS legal.
     const s = asPortal(parseFEN("4k3/4p3/7N/8/8/8/8/K7 w - - 0 1"));
-    s.portals = { w: null, b: parseSquare("g4") };
+    s.portals = { w: [], b: [parseSquare("g4")], max: 1 };
     s.portalAdjacencyRule = true;
     const moves = legalMovesFrom(s, parseSquare("h6"))
       .filter((m) => sqEq(m.to, parseSquare("g4")) && m.portalTo
@@ -131,7 +131,7 @@ describe("Portal Chess: teleport entry", () => {
 
   it("With adjacency rule OFF (default), targets next to other pieces are allowed", () => {
     const s = asPortal(parseFEN("8/8/8/8/8/1P6/8/6N1 w - - 0 1"));
-    s.portals = { w: null, b: parseSquare("f3") };
+    s.portals = { w: [], b: [parseSquare("f3")], max: 1 };
     const targets = teleportTargets(s, parseSquare("g1"), parseSquare("f3"), { type: "N", color: "w" });
     // c2 is adjacent to b3; with the rule off it's permitted.
     expect(targets.some((t) => sqEq(t, parseSquare("c2")))).toBe(true);
@@ -150,7 +150,7 @@ describe("Portal Chess: teleport entry", () => {
     // king exposed -> all teleport targets are illegal because moving the rook
     // off the a-file uncovers check.
     const s = asPortal(parseFEN("r6k/8/8/8/8/8/R7/K7 w - - 0 1"));
-    s.portals = { w: null, b: parseSquare("b2") };
+    s.portals = { w: [], b: [parseSquare("b2")], max: 1 };
     const moves = legalMovesFrom(s, parseSquare("a2"))
       .filter((m) => sqEq(m.to, parseSquare("b2")));
     // Any legal teleport must keep the rook on the a-file (file 0) so the
@@ -167,21 +167,21 @@ describe("Portal Chess: creator pass-through and capture-then-teleport", () => {
   it("The creator (Queen) does not teleport when she lands on a portal", () => {
     // Place black portal at e4, white queen at e1, clear file.
     const s = asPortal(parseFEN("8/8/8/8/8/8/8/4Q3 w - - 0 1"));
-    s.portals = { w: null, b: parseSquare("e4") };
+    s.portals = { w: [], b: [parseSquare("e4")], max: 1 };
     const moves = legalMovesFrom(s, parseSquare("e1")).filter((m) => sqEq(m.to, parseSquare("e4")));
     expect(moves.length).toBe(1);
     expect(moves[0].isPortalEntry).toBeFalsy();
     // After the move: enemy portal STILL active (queen passed through).
     const ns = makeMove(s, moves[0]);
-    expect(ns.portals?.b).toEqual(parseSquare("e4"));
+    expect(ns.portals?.b).toEqual([parseSquare("e4")]);
     // No new white portal because there's already a portal at her landing square.
-    expect(ns.portals?.w).toBeNull();
+    expect(ns.portals?.w).toEqual([]);
   });
 
   it("Knight captures a piece on a portal then teleports", () => {
     // White N at g1, black portal at f3 with a black pawn sitting on f3.
     const s = asPortal(parseFEN("8/8/8/8/8/5p2/8/6N1 w - - 0 1"));
-    s.portals = { w: null, b: parseSquare("f3") };
+    s.portals = { w: [], b: [parseSquare("f3")], max: 1 };
     // Pick a non-stay teleport variant so the portal is consumed.
     const moves = legalMovesFrom(s, parseSquare("g1"))
       .filter((m) => sqEq(m.to, parseSquare("f3"))
@@ -191,7 +191,7 @@ describe("Portal Chess: creator pass-through and capture-then-teleport", () => {
     expect(moves[0].isPortalEntry).toBe(true);
     const ns = makeMove(s, moves[0]);
     // Portal consumed.
-    expect(ns.portals?.b).toBeNull();
+    expect(ns.portals?.b).toEqual([]);
     // Knight is at portalTo, NOT at f3.
     expect(ns.board[2][5]).toBeNull();
     expect(ns.board[moves[0].portalTo!.rank][moves[0].portalTo!.file]).toEqual({ type: "N", color: "w" });
@@ -203,7 +203,7 @@ describe("Portal Chess: creator pass-through and capture-then-teleport", () => {
 
   it("Stay-in-place teleport: piece can choose portal square as target; portal stays active", () => {
     const s = asPortal(parseFEN("8/8/8/8/8/8/8/6N1 w - - 0 1"));
-    s.portals = { w: null, b: parseSquare("f3") };
+    s.portals = { w: [], b: [parseSquare("f3")], max: 1 };
     const stayMove = legalMovesFrom(s, parseSquare("g1"))
       .find((m) => m.isPortalEntry && m.portalTo && sqEq(m.portalTo, parseSquare("f3")));
     expect(stayMove).toBeDefined();
@@ -211,7 +211,7 @@ describe("Portal Chess: creator pass-through and capture-then-teleport", () => {
     // Knight ends on f3 (the portal square).
     expect(ns.board[2][5]).toEqual({ type: "N", color: "w" });
     // Portal remains active.
-    expect(ns.portals?.b).toEqual(parseSquare("f3"));
+    expect(ns.portals?.b).toEqual([parseSquare("f3")]);
   });
 });
 
@@ -220,7 +220,7 @@ describe("Portal Chess: creator life", () => {
     // White Q at d1, black R at d8. Black plays Rxd1 (captures the white Q).
     const s = asPortal(parseFEN("3r4/8/8/8/8/8/8/3Q4 b - - 0 1"));
     const ns = play(s, "d8", "d1");
-    expect(ns.portals?.w).toBeNull(); // no white portal placed by capture
+    expect(ns.portals?.w).toEqual([]); // no white portal placed by capture
     // Confirm white has no Q left, so subsequent white moves don't drop portals.
     let wQ = 0;
     for (const row of ns.board) for (const p of row) if (p?.type === "Q" && p.color === "w") wQ++;
@@ -235,14 +235,14 @@ describe("Portal Chess: creator life", () => {
     expect(moves.length).toBe(1);
     const ns = makeMove(s, moves[0]);
     // The promoted Q just moved -> portal drops at a8.
-    expect(ns.portals?.w).toEqual(parseSquare("a8"));
+    expect(ns.portals?.w).toEqual([parseSquare("a8")]);
   });
 });
 
 describe("Portal Chess: legal-move enumeration", () => {
   it("allLegalMoves expands portal entries into per-target moves", () => {
     const s = asPortal(parseFEN("8/8/8/8/8/8/8/6N1 w - - 0 1"));
-    s.portals = { w: null, b: parseSquare("f3") };
+    s.portals = { w: [], b: [parseSquare("f3")], max: 1 };
     const moves = allLegalMoves(s);
     const onPortal = moves.filter((m) => sqEq(m.to, parseSquare("f3")));
     // Multiple teleport targets => multiple legal moves landing on f3.
@@ -252,7 +252,7 @@ describe("Portal Chess: legal-move enumeration", () => {
 
   it("Pawn landing on a portal is a single regular move (no teleport variants)", () => {
     const s = asPortal(parseFEN("8/8/8/8/3p4/2P5/8/8 w - - 0 1"));
-    s.portals = { w: null, b: parseSquare("d4") };
+    s.portals = { w: [], b: [parseSquare("d4")], max: 1 };
     const moves = legalMovesFrom(s, parseSquare("c3")).filter((m) => sqEq(m.to, parseSquare("d4")));
     expect(moves.length).toBe(1);
     expect(moves[0].isPortalEntry).toBeFalsy();
@@ -264,8 +264,10 @@ describe("Portal Chess: position keys differ by portal location", () => {
   it("Same board with different portal positions yields different keys", () => {
     const s1 = asPortal(initialState());
     const s2 = asPortal(initialState());
-    s1.portals = { w: parseSquare("d4"), b: null };
-    s2.portals = { w: parseSquare("e4"), b: null };
+    s1.portals = { w: [parseSquare("d4")], b: [], max: 1 };
+    s2.portals = { w: [parseSquare("e4")], b: [], max: 1 };
     expect(positionKey(s1)).not.toBe(positionKey(s2));
   });
 });
+
+

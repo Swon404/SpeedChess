@@ -12,9 +12,10 @@ export function NewGameScreen() {
   const [whiteName, setWhiteName] = useState<string>(activeProfile?.name ?? "");
   const [blackName, setBlackName] = useState<string>("");
   // Portal Chess sub-options
-  const [portalCreator, setPortalCreator] = useState<PieceType>("Q");
+  const [portalCreator, setPortalCreator] = useState<PieceType>("N");
   const [portalOpponentKind, setPortalOpponentKind] = useState<"two-player" | "bot">("bot");
   const [portalAdjacencyRule, setPortalAdjacencyRule] = useState<boolean>(false);
+  const [portalMax, setPortalMax] = useState<1 | 2 | 3>(1);
 
   const ensureProfile = (name: string): string => {
     const trimmed = name.trim();
@@ -45,12 +46,12 @@ export function NewGameScreen() {
       if (portalOpponentKind === "two-player") {
         const b = ensureProfile(blackName || "Player 2");
         newGame(
-          { kind: "portal", opponent: "two-player", creator: portalCreator, adjacencyRule: portalAdjacencyRule },
+          { kind: "portal", opponent: "two-player", creator: portalCreator, adjacencyRule: portalAdjacencyRule, portalMax },
           { w, b }
         );
       } else {
         newGame(
-          { kind: "portal", opponent: { kind: "bot", level }, creator: portalCreator, adjacencyRule: portalAdjacencyRule },
+          { kind: "portal", opponent: { kind: "bot", level }, creator: portalCreator, adjacencyRule: portalAdjacencyRule, portalMax },
           { w, b: `Bot Lv ${level}` }
         );
       }
@@ -75,8 +76,9 @@ export function NewGameScreen() {
           <p className="hint">
             After every move of the nominated piece, a glowing portal appears on the
             square it lands on. Any non-pawn piece (either side) that lands on a portal
-            teleports to a chosen empty square not adjacent to any other piece. Each
-            side has at most one active portal at a time; portals are consumed when used.
+            teleports to a chosen empty square not adjacent to any other piece.
+            Portals are consumed when used; each side can hold up to the configured
+            number of active portals at a time.
           </p>
         )}
       </section>
@@ -110,6 +112,24 @@ export function NewGameScreen() {
               The nominated piece auto-drops a portal under itself after each move (if
               its side has no active portal yet). It does not teleport through portals
               itself. Pawns are excluded entirely &mdash; they never use portals.
+            </p>
+          </section>
+
+          <section>
+            <h3>Active portals per player</h3>
+            <div className="difficulty">
+              {([1, 2, 3] as const).map((n) => (
+                <button key={n}
+                  className={n === portalMax ? "pill active" : "pill"}
+                  onClick={() => setPortalMax(n)}>
+                  {n}
+                </button>
+              ))}
+            </div>
+            <p className="hint">
+              Each side can have up to this many active portals at once. The
+              nominated piece keeps dropping a new portal under itself after
+              each move until the cap is reached.
             </p>
           </section>
 

@@ -35,8 +35,9 @@ function makePortalPuzzle(p: PortalPuzzleRow): PortalPuzzle {
     setup(): GameState {
       const state = parseFEN(p.fen);
       state.portals = {
-        w: p.wPortal ? alg(p.wPortal) : null,
-        b: p.bPortal ? alg(p.bPortal) : null,
+        w: p.wPortal ? [alg(p.wPortal)] : [],
+        b: p.bPortal ? [alg(p.bPortal)] : [],
+        max: 1,
       };
       state.portalCreators = { w: p.creator, b: p.creator };
       return state;

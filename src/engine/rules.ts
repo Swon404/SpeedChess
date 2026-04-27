@@ -26,8 +26,8 @@ const KING_DIRS: Dir[] = [...BISHOP_DIRS, ...ROOK_DIRS];
 /** Portal Chess: returns "w"/"b" if `sq` hosts an active portal, else null. */
 export function portalAt(state: GameState, sq: Square): Color | null {
   if (!state.portals) return null;
-  if (state.portals.w && sqEq(state.portals.w, sq)) return "w";
-  if (state.portals.b && sqEq(state.portals.b, sq)) return "b";
+  if (state.portals.w.some((p) => sqEq(p, sq))) return "w";
+  if (state.portals.b.some((p) => sqEq(p, sq))) return "b";
   return null;
 }
 
@@ -314,7 +314,9 @@ export function makeMove(state: GameState, move: Move): GameState {
     const stayed = sqEq(move.portalTo, move.to);
     if (!stayed) {
       const owner = portalAt(ns, move.to);
-      if (owner) ns.portals[owner] = null;
+      if (owner) {
+        ns.portals[owner] = ns.portals[owner].filter((p) => !sqEq(p, move.to));
+      }
     }
     landing = move.portalTo;
   }
@@ -326,19 +328,17 @@ export function makeMove(state: GameState, move: Move): GameState {
   ns.board[landing.rank][landing.file] = placed;
 
   // Portal Chess: auto-drop a portal under the creator piece if her side has
-  // no active portal and her landing square has no portal currently. Skipped
-  // for portal entries (creator can't trigger teleport, so this is unreachable
-  // there in practice, but guard anyway) and skipped if the move was a pawn
-  // promotion that produced a non-creator piece.
+  // fewer than the max active portals and her landing square has no portal
+  // currently. Skipped for portal entries (creator can't trigger teleport).
   if (
     ns.portals &&
     ns.portalCreators &&
     !move.isPortalEntry &&
     placed.type === ns.portalCreators[piece.color] &&
-    ns.portals[piece.color] === null &&
+    ns.portals[piece.color].length < ns.portals.max &&
     portalAt(ns, landing) === null
   ) {
-    ns.portals[piece.color] = { ...landing };
+    ns.portals[piece.color] = [...ns.portals[piece.color], { ...landing }];
   }
 
   // Update castling rights

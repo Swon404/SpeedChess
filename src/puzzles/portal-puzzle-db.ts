@@ -50,8 +50,9 @@ interface RawCandidate {
 function setupState(c: RawCandidate): GameState {
   const s = parseFEN(c.fen);
   s.portals = {
-    w: c.wPortal ? alg(c.wPortal) : null,
-    b: c.bPortal ? alg(c.bPortal) : null,
+    w: c.wPortal ? [alg(c.wPortal)] : [],
+    b: c.bPortal ? [alg(c.bPortal)] : [],
+    max: 1,
   };
   s.portalCreators = { w: "K", b: "K" };
   return s;
