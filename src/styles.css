@@ -278,17 +278,17 @@ section label { display: block; margin: 6px 0; }
   will-change: transform;
 }
 /* Portal teleport: piece dematerialises at origin, rematerialises at destination.
-   Total warp duration: demat (1300ms) + gap (200ms) + remat (1300ms) = ~2.8s. */
+   Total warp duration: demat (900ms) + gap (200ms) + remat (900ms) = 2.0s. */
 .piece-dematerialize {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  animation: piece-demat 1300ms ease-in forwards;
+  animation: piece-demat 900ms ease-in forwards;
   will-change: transform, opacity, filter;
   z-index: 2;
 }
 .piece-rematerialize {
-  animation: piece-remat 1300ms 1500ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation: piece-remat 900ms 1100ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
   will-change: transform, opacity, filter;
 }
 @keyframes piece-demat {
