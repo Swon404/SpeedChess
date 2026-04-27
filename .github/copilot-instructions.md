@@ -7,7 +7,7 @@ Project conventions and gotchas for AI agents working in this repository.
 - React 19 + TypeScript (strict), Vite 8, `vite-plugin-pwa`
 - Vitest 3.2.4 (1400+ tests)
 - Deployed to GitHub Pages at `https://swon404.github.io/SpeedChess/` (base `/SpeedChess/`)
-- Dev server: `npm run dev` (port 5180)
+- Dev server: `npm run dev` (port 6180)
 - `npm install` requires `--legacy-peer-deps`
 
 ## Repo Layout

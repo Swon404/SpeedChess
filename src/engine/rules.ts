@@ -37,10 +37,10 @@ function sqColor(sq: Square): "light" | "dark" {
 }
 
 /**
- * Portal Chess: enumerate squares the `mover` could teleport to from `portalSq`.
- * Pure geometry: target may be the portal square itself (stay-in-place,
- * portal stays active in makeMove) or any empty square. Bishops are
- * restricted to the same colour as the portal square.
+ * Portal Chess (deferred warp): enumerate squares the `mover` (currently on
+ * `portalSq`, which is its own side's portal) can teleport to. Result is any
+ * empty square on the board EXCEPT `portalSq` itself (must leave the portal).
+ * Bishops are restricted to squares matching the portal-square colour.
  *
  * The optional adjacency house rule is NOT applied here — it's enforced in
  * `legalMovesFrom` with an exception: targets that deliver check to the
@@ -52,15 +52,15 @@ export function teleportTargets(
   portalSq: Square,
   mover: Piece
 ): Square[] {
+  // Sanity: deferred-warp rules require the piece to be standing on the portal.
+  // (`fromSq` should equal `portalSq`; we treat any mismatch as no targets.)
+  if (!sqEq(fromSq, portalSq)) return [];
   const out: Square[] = [];
   const portalCol = sqColor(portalSq);
-  const isExempt = (sq: Square) => sqEq(sq, fromSq) || sqEq(sq, portalSq);
-  // Stay-in-place: the portal square itself is always a valid target.
-  out.push({ ...portalSq });
   for (let r = 0; r < 8; r++) {
     for (let f = 0; f < 8; f++) {
       const sq = { file: f, rank: r };
-      if (isExempt(sq)) continue;
+      if (sqEq(sq, portalSq)) continue; // can't stay on portal
       if (state.board[r][f]) continue;
       if (mover.type === "B" && sqColor(sq) !== portalCol) continue;
       out.push(sq);
@@ -71,16 +71,15 @@ export function teleportTargets(
 
 /**
  * Portal Chess: returns true if `target` is adjacent to any piece on the
- * board, treating `fromSq` and `portalSq` as empty (they are vacated by the
- * teleport). Used to enforce the optional adjacency house rule.
+ * board, treating `fromSq` (the portal square) as empty (it is vacated by
+ * the teleport). Used to enforce the optional adjacency house rule.
  */
 function teleportIsAdjacentToPiece(
   state: GameState,
   target: Square,
-  fromSq: Square,
-  portalSq: Square
+  fromSq: Square
 ): boolean {
-  const isExempt = (sq: Square) => sqEq(sq, fromSq) || sqEq(sq, portalSq) || sqEq(sq, target);
+  const isExempt = (sq: Square) => sqEq(sq, fromSq) || sqEq(sq, target);
   for (let dr = -1; dr <= 1; dr++) {
     for (let df = -1; df <= 1; df++) {
       if (dr === 0 && df === 0) continue;
@@ -301,25 +300,24 @@ export function makeMove(state: GameState, move: Move): GameState {
     }
   }
 
-  // Capture happens at move.to (even for portal entry — capture, then teleport)
-  // Clear the destination square (handles capture).
+  // Capture happens at move.to. Clear the destination square (handles capture).
   ns.board[move.to.rank][move.to.file] = null;
 
-  // Portal Chess: portal entry consumes the portal at `to` and the piece
-  // teleports to `portalTo` instead of staying at `to`. Exception: if the
-  // chosen target IS the portal square itself, the piece "stays" on the
-  // portal and the portal remains active.
-  let landing: Square = move.to;
-  if (move.isPortalEntry && move.portalTo && ns.portals) {
-    const stayed = sqEq(move.portalTo, move.to);
-    if (!stayed) {
-      const owner = portalAt(ns, move.to);
-      if (owner) {
-        ns.portals[owner] = ns.portals[owner].filter((p) => !sqEq(p, move.to));
+  // Portal Chess (deferred warp): the portal under a non-creator piece is
+  // consumed when the piece leaves it (whether by normal move or teleport).
+  // The creator piece doesn't use portals, so its own movement never consumes
+  // a portal under it (the creator simply leaves it behind).
+  if (ns.portals && ns.portalCreators) {
+    const creator = ns.portalCreators[piece.color];
+    if (piece.type !== creator) {
+      const ownPortalAtFrom = ns.portals[piece.color].some((p) => sqEq(p, move.from));
+      if (ownPortalAtFrom) {
+        ns.portals[piece.color] = ns.portals[piece.color].filter((p) => !sqEq(p, move.from));
       }
     }
-    landing = move.portalTo;
   }
+
+  const landing: Square = move.to;
 
   // Place piece (with promotion) at landing square.
   const placed: Piece = move.promotion
@@ -329,7 +327,7 @@ export function makeMove(state: GameState, move: Move): GameState {
 
   // Portal Chess: auto-drop a portal under the creator piece if her side has
   // fewer than the max active portals and her landing square has no portal
-  // currently. Skipped for portal entries (creator can't trigger teleport).
+  // currently. Skipped for teleport moves (creator never teleports anyway).
   if (
     ns.portals &&
     ns.portalCreators &&
@@ -411,38 +409,44 @@ export function legalMovesFrom(state: GameState, from: Square): Move[] {
   const pseudo = pseudoMovesFrom(state, from);
   const out: Move[] = [];
   const creator = state.portalCreators?.[p.color];
+
+  // Normal moves: filter for king safety. (Deferred-warp rules: stepping
+  // onto a portal is just a normal move now — no on-the-spot teleport.)
   for (const m of pseudo) {
-    // Determine whether this move triggers a portal teleport.
-    // Portals trigger only in Portal Chess (state.portals defined),
-    // for any non-pawn piece that ISN'T the creator type, when its
-    // destination square hosts an active portal of either side.
-    const triggers =
-      state.portals &&
-      portalAt(state, m.to) !== null &&
-      p.type !== "P" &&
-      p.type !== creator;
-    if (triggers) {
-      const targets = teleportTargets(state, from, m.to, p);
-      const adjacency = state.portalAdjacencyRule === true;
-      for (const t of targets) {
-        const portalMove: Move = { ...m, isPortalEntry: true, portalTo: { ...t } };
-        const ns = makeMove(state, portalMove);
-        if (inCheck(ns, p.color)) continue; // own king must not be in check
-        if (adjacency && !sqEq(t, m.to)) {
-          // Adjacency house rule: only enforce when not landing on the
-          // portal square itself (stay-in-place is always allowed). Targets
-          // that deliver check to the opponent bypass the adjacency rule.
-          const adjacent = teleportIsAdjacentToPiece(state, t, from, m.to);
-          if (adjacent && !inCheck(ns, opposite(p.color))) continue;
-        }
-        out.push(portalMove);
-      }
-      // If no valid targets, this landing is illegal in Portal Chess.
-      continue;
-    }
     const ns = makeMove(state, m);
     if (!inCheck(ns, p.color)) out.push(m);
   }
+
+  // Portal Chess (deferred warp): if this piece is currently sitting on its
+  // own side's portal, it may also teleport to any empty square. Pawns and
+  // the creator piece can't use portals.
+  if (
+    state.portals &&
+    p.type !== "P" &&
+    p.type !== creator &&
+    state.portals[p.color].some((sq) => sqEq(sq, from))
+  ) {
+    const targets = teleportTargets(state, from, from, p);
+    const adjacency = state.portalAdjacencyRule === true;
+    for (const t of targets) {
+      const tpMove: Move = {
+        from: { ...from },
+        to: { ...t },
+        piece: p.type,
+        color: p.color,
+        isPortalEntry: true,
+        portalTo: { ...t },
+      };
+      const ns = makeMove(state, tpMove);
+      if (inCheck(ns, p.color)) continue;
+      if (adjacency) {
+        const adjacent = teleportIsAdjacentToPiece(state, t, from);
+        if (adjacent && !inCheck(ns, opposite(p.color))) continue;
+      }
+      out.push(tpMove);
+    }
+  }
+
   return out;
 }
 

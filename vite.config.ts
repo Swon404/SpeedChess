@@ -5,7 +5,7 @@ import { VitePWA } from "vite-plugin-pwa";
 export default defineConfig({
   base: "/SpeedChess/",
   server: {
-    port: 5180,
+    port: 6180,
     strictPort: true
   },
   plugins: [

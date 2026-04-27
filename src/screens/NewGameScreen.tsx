@@ -75,10 +75,12 @@ export function NewGameScreen() {
         {kind === "portal" && (
           <p className="hint">
             After every move of the nominated piece, a glowing portal appears on the
-            square it lands on. Any non-pawn piece (either side) that lands on a portal
-            teleports to a chosen empty square not adjacent to any other piece.
-            Portals are consumed when used; each side can hold up to the configured
-            number of active portals at a time.
+            square it lands on. When one of your non-pawn pieces (other than the
+            nominated piece) lands on your own portal, nothing happens immediately —
+            but on a later turn that piece may teleport from the portal to any
+            empty square. The piece cannot stay on the portal; the portal is spent
+            when the piece leaves. Each side can hold up to the configured number
+            of active portals at a time.
           </p>
         )}
       </section>

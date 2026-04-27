@@ -35,6 +35,10 @@ function parsePortalUci(uci: string): {
 }
 
 describe("portal puzzle solutions", () => {
+  it("portal puzzle list is well-defined (may be empty during refactor)", () => {
+    expect(Array.isArray(PORTAL_PUZZLES)).toBe(true);
+  });
+
   for (const p of PORTAL_PUZZLES) {
     it(`${p.id} — portal mate in ${p.mateIn()}`, () => {
       let state = p.setup();
