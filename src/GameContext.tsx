@@ -245,10 +245,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
       try {
         // Compute the bot move and ensure enough time has elapsed so the
         // human's own animation has time to play before the board re-renders
-        // with the bot's response. Teleport animations are longer (~1.6s)
-        // so we wait extra when the previous move was a portal entry.
+        // with the bot's response. Teleport animations are longer (~2.8s
+        // total: demat + gap + remat) so we wait extra when the previous
+        // move was a portal entry. Slide animation is ~650ms, so we wait
+        // ~750ms after a normal human move.
         const prevMove = state.history[state.history.length - 1];
-        const minThinkMs = prevMove?.isPortalEntry ? 1700 : 320;
+        const minThinkMs = prevMove?.isPortalEntry ? 2900 : 750;
         const t0 = performance.now();
         const move = await chooseBotMove(state, lvl);
         const elapsed = performance.now() - t0;
