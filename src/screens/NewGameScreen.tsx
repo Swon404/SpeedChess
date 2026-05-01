@@ -145,8 +145,8 @@ export function NewGameScreen() {
             </label>
             <p className="hint">
               When ticked, teleport targets cannot be adjacent to any other piece.
-              When unticked (default), you can teleport anywhere empty &mdash; or stay
-              on the portal square (the portal remains active).
+              When unticked (default), you can teleport to any empty square
+              except the portal square itself.
             </p>
           </section>
         </>
@@ -194,6 +194,21 @@ export function NewGameScreen() {
             </div>
           )}
           <p className="hint">New names are saved as profiles so stats track over time.</p>
+        </section>
+      )}
+
+      {showBlackName && (
+        <section>
+          <h3>Board orientation (2-player)</h3>
+          <label>
+            <input
+              type="checkbox"
+              checked={store.settings.autoFlip}
+              onChange={(e) => updateSetting("autoFlip", e.target.checked)}
+            />
+            {" "}Auto-turn board after each move
+          </label>
+          <p className="hint">Turn this off to keep the board fixed from White's side.</p>
         </section>
       )}
 

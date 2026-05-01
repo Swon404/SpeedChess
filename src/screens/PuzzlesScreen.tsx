@@ -11,6 +11,7 @@ import {
   type PortalPuzzle
 } from "../puzzles/portal-puzzles";
 import { parseUci, parseSquare, type Square } from "../engine/board";
+import { gameResult } from "../engine/rules";
 
 type Status = "solving" | "wrong" | "solved";
 type MateFilter = "all" | 1 | 2 | 3;
@@ -84,6 +85,7 @@ export function PuzzlesScreen() {
 
   const pool: (Puzzle | PortalPuzzle)[] = mode === "portal" ? portalPool : stdPool;
   const puzzle = pool[index];
+  const sideToMate = useMemo(() => (puzzle ? puzzle.setup().turn : "w"), [puzzle?.id]);
   const totalSolved = activeProfile?.stats.puzzlesSolved ?? 0;
 
   const diffCounts = useMemo(() => {
@@ -152,12 +154,24 @@ export function PuzzlesScreen() {
       ok = false;
     }
 
-    if (!ok) {
+    // Accept alternative winning moves: if the user has just checkmated,
+    // count the puzzle as solved even when it differs from the scripted line.
+    const current = gameResult(state);
+    const solvedByMate = current.kind === "checkmate" && current.winner === sideToMate;
+
+    if (!ok && !solvedByMate) {
       setStatus("wrong");
       if (attemptedRef.current !== puzzle.id) {
         recordPuzzleAttempt(puzzle.id);
         attemptedRef.current = puzzle.id;
       }
+      return;
+    }
+
+    if (solvedByMate) {
+      setStatus("solved");
+      recordPuzzleSolved(puzzle.id);
+      setPlayedPlies(moved);
       return;
     }
 
@@ -196,10 +210,10 @@ export function PuzzlesScreen() {
     if (!puzzle) return null;
     if (status === "solved") return <div className="puzzle-banner good">✅ Solved! Great job.</div>;
     if (status === "wrong") return <div className="puzzle-banner bad">❌ Not quite — tap Retry.</div>;
-    const side = puzzle.setup().turn === "w" ? "White" : "Black";
+    const side = sideToMate === "w" ? "White" : "Black";
     const done = alreadySolved ? " (already solved ✓)" : "";
     return <div className="puzzle-banner">You play {side}. Mate in {puzzle.mateIn()} — find the forced win.{done}</div>;
-  }, [status, puzzle, alreadySolved]);
+  }, [status, puzzle, alreadySolved, sideToMate]);
 
   const allSolvedHere = mode === "portal"
     ? basePortalPool.length > 0 && basePortalPool.every((p) => solvedIds.has(p.id))

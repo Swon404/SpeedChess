@@ -64,6 +64,30 @@ describe("Portal Chess: portal creation", () => {
     const ns = makeMove(s, cap[0]);
     expect(ns.portals?.b).toEqual([parseSquare("d5")]);
   });
+
+  it("Pawn on own portal blocks access and moving off does not consume it", () => {
+    const s = asPortal(parseFEN("4k3/8/8/8/8/8/4P3/4K1N1 w - - 0 1"));
+    s.portals = { w: [parseSquare("e2")], b: [], max: 1 };
+
+    const pawnMoves = legalMovesFrom(s, parseSquare("e2"));
+    expect(pawnMoves.some((m) => m.isPortalEntry)).toBe(false);
+    const up = pawnMoves.find((m) => sqEq(m.to, parseSquare("e3")));
+    expect(up).toBeDefined();
+
+    let ns = makeMove(s, up!);
+    expect(ns.portals?.w).toEqual([parseSquare("e2")]);
+
+    // Skip black's turn in this unit test and continue from white's side.
+    ns.turn = "w";
+    const ontoPortal = legalMovesFrom(ns, parseSquare("g1"))
+      .find((m) => sqEq(m.to, parseSquare("e2")));
+    expect(ontoPortal).toBeDefined();
+
+    ns = makeMove(ns, ontoPortal!);
+    ns.turn = "w";
+    const tele = legalMovesFrom(ns, parseSquare("e2")).filter((m) => m.isPortalEntry);
+    expect(tele.length).toBeGreaterThan(0);
+  });
 });
 
 describe("Portal Chess: teleport entry", () => {

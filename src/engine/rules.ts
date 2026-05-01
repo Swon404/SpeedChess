@@ -303,13 +303,12 @@ export function makeMove(state: GameState, move: Move): GameState {
   // Capture happens at move.to. Clear the destination square (handles capture).
   ns.board[move.to.rank][move.to.file] = null;
 
-  // Portal Chess (deferred warp): the portal under a non-creator piece is
-  // consumed when the piece leaves it (whether by normal move or teleport).
-  // The creator piece doesn't use portals, so its own movement never consumes
-  // a portal under it (the creator simply leaves it behind).
+  // Portal Chess (deferred warp): only non-pawn, non-creator pieces consume
+  // their own portal when leaving it (normal move or teleport). Pawns simply
+  // stand on portals and block access until they move away.
   if (ns.portals && ns.portalCreators) {
     const creator = ns.portalCreators[piece.color];
-    if (piece.type !== creator) {
+    if (piece.type !== "P" && piece.type !== creator) {
       const ownPortalAtFrom = ns.portals[piece.color].some((p) => sqEq(p, move.from));
       if (ownPortalAtFrom) {
         ns.portals[piece.color] = ns.portals[piece.color].filter((p) => !sqEq(p, move.from));
