@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { PieceType } from "../engine/board";
 import { useGame } from "../GameContext";
@@ -16,6 +16,11 @@ export function NewGameScreen() {
   const [portalOpponentKind, setPortalOpponentKind] = useState<"two-player" | "bot">("bot");
   const [portalAdjacencyRule, setPortalAdjacencyRule] = useState<boolean>(false);
   const [portalMax, setPortalMax] = useState<1 | 2 | 3>(1);
+  const maxLevel = kind === "bot" ? 20 : 10;
+
+  useEffect(() => {
+    if (level > maxLevel) setLevel(maxLevel);
+  }, [level, maxLevel]);
 
   const ensureProfile = (name: string): string => {
     const trimmed = name.trim();
@@ -29,8 +34,6 @@ export function NewGameScreen() {
   };
 
   const start = () => {
-    updateSetting("timerSeconds", timer);
-
     // Ensure white profile exists and is active — stats are tied to this name
     const w = ensureProfile(whiteName || "Player 1");
     const wProf = store.profiles.find((p) => p.name.toLowerCase() === w.toLowerCase());
@@ -38,21 +41,23 @@ export function NewGameScreen() {
 
     if (kind === "two-player") {
       const b = ensureProfile(blackName || "Player 2");
-      newGame({ kind: "two-player" }, { w, b });
+      newGame({ kind: "two-player" }, { w, b }, { timerSeconds: timer });
     } else if (kind === "bot") {
-      newGame({ kind: "bot", level }, { w, b: `Bot Lv ${level}` });
+      newGame({ kind: "bot", level }, { w, b: `Bot Lv ${level}` }, { timerSeconds: timer });
     } else {
       // Portal Chess
       if (portalOpponentKind === "two-player") {
         const b = ensureProfile(blackName || "Player 2");
         newGame(
           { kind: "portal", opponent: "two-player", creator: portalCreator, adjacencyRule: portalAdjacencyRule, portalMax },
-          { w, b }
+          { w, b },
+          { timerSeconds: timer }
         );
       } else {
         newGame(
           { kind: "portal", opponent: { kind: "bot", level }, creator: portalCreator, adjacencyRule: portalAdjacencyRule, portalMax },
-          { w, b: `Bot Lv ${level}` }
+          { w, b: `Bot Lv ${level}` },
+          { timerSeconds: timer }
         );
       }
     }
@@ -216,7 +221,7 @@ export function NewGameScreen() {
         <section>
           <h3>Bot difficulty</h3>
           <div className="difficulty">
-            {Array.from({ length: 10 }, (_, i) => i + 1).map((lv) => (
+            {Array.from({ length: maxLevel }, (_, i) => i + 1).map((lv) => (
               <button
                 key={lv}
                 className={lv === level ? "pill active" : "pill"}
@@ -225,7 +230,9 @@ export function NewGameScreen() {
             ))}
           </div>
           <p className="hint">
-            Level 1 is very easy (good for a new learner). Levels 6+ use a stronger engine when available.
+            {kind === "bot"
+              ? "Level 1 is very easy (good for a new learner). Levels 5-20 use an external chess engine for stronger play."
+              : "Portal-bot mode uses the built-in engine and supports levels 1-10."}
           </p>
         </section>
       )}

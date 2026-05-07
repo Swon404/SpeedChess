@@ -25,10 +25,12 @@ export interface ProfileStats {
 
 export type BoardTheme = "wood" | "blue" | "green" | "neon";
 export type PieceSet = "classic" | "modern" | "neon" | "emoji";
+export type AnimationSpeed = "normal" | "slow" | "very-slow";
 
 export interface Settings {
   activeProfileId: string | null;
   timerSeconds: number; // 0 = off
+  animationSpeed: AnimationSpeed;
   theme: BoardTheme;
   pieceSet: PieceSet;
   sound: boolean;
@@ -56,6 +58,7 @@ export interface Store {
 const DEFAULT_SETTINGS: Settings = {
   activeProfileId: null,
   timerSeconds: 30,
+  animationSpeed: "slow",
   theme: "wood",
   pieceSet: "modern",
   sound: true,
@@ -164,7 +167,7 @@ function awardBadges(p: Profile): void {
   if (p.stats.streak >= 3) add("streak-3");
   if (p.stats.puzzlesSolved >= 1) add("first-puzzle");
   if (p.stats.puzzlesSolved >= 10) add("puzzle-ten");
-  for (let lvl = 1; lvl <= 10; lvl++) {
+  for (let lvl = 1; lvl <= 20; lvl++) {
     if ((p.stats.byBotLevel[lvl]?.wins ?? 0) > 0) add(`beat-bot-${lvl}`);
   }
 }
@@ -228,7 +231,7 @@ export interface ActiveSession {
   mode:
     | { kind: "two-player" }
     | { kind: "bot"; level: number }
-    | { kind: "portal"; opponent: "two-player" | { kind: "bot"; level: number }; creator: PieceType; adjacencyRule?: boolean };
+    | { kind: "portal"; opponent: "two-player" | { kind: "bot"; level: number }; creator: PieceType; adjacencyRule?: boolean; portalMax?: number };
   players: { w: string; b: string };
   stack: GameState[]; // full history stack, so Undo still works
   timeLeft: number | null; // null === Infinity (timer off)

@@ -12,26 +12,28 @@ interface Props {
   color: Color;
   type: PieceType;
   set: PieceSet;
+  rotate?: boolean;
 }
 
-export function Piece({ color, type, set }: Props) {
+export function Piece({ color, type, set, rotate = false }: Props) {
+  const faceClass = rotate ? "piece-face-180" : "";
   if (set === "classic") {
     return (
-      <span className={`piece-glyph piece-${color}`}>
+      <span className={`piece-glyph piece-${color} ${faceClass}`}>
         {GLYPH[color + type]}
       </span>
     );
   }
   if (set === "emoji") {
     return (
-      <span className={`piece-mc piece-${color}`}>
+      <span className={`piece-mc piece-${color} ${faceClass}`}>
         <MinecraftPiece color={color} type={type} />
       </span>
     );
   }
   // modern + neon both use SVG; neon gets a filter via CSS on the parent.
   return (
-    <span className={`piece-svg piece-${color}`}>
+    <span className={`piece-svg piece-${color} ${faceClass}`}>
       <PieceSVG color={color} type={type} />
     </span>
   );

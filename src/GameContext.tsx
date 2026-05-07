@@ -24,6 +24,10 @@ type Mode =
   | { kind: "portal"; opponent: "two-player" | { kind: "bot"; level: number }; creator: PieceType; adjacencyRule?: boolean; portalMax?: number };
 export interface Players { w: string; b: string; }
 
+interface NewGameOptions {
+  timerSeconds?: number;
+}
+
 /** Build the initial state for Portal Chess (creator-type portals). */
 function portalInitialState(creator: PieceType, adjacencyRule = false, portalMax = 1): GameState {
   const s = initialState();
@@ -50,8 +54,10 @@ interface GameCtx {
 
   select(sq: Square | null): void;
   tryMove(from: Square, to: Square, promotion?: "Q" | "R" | "B" | "N", portalTo?: Square): boolean;
+  lastMoveReplayNonce: number;
+  replayLastMove(): void;
   undo(): void;
-  newGame(mode: Mode, players?: Partial<Players>): void;
+  newGame(mode: Mode, players?: Partial<Players>, opts?: NewGameOptions): void;
   forfeit(): void;
 
   // puzzles
@@ -139,6 +145,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [isBotThinking, setIsBotThinking] = useState(false);
   const [hint, setHint] = useState<Move | null>(null);
   const [paused, setPaused] = useState(false);
+  const [lastMoveReplayNonce, setLastMoveReplayNonce] = useState(0);
   const stateRef = useRef(state);
   useEffect(() => { stateRef.current = state; }, [state]);
   // Track latest store for callbacks that need the freshest settings.
@@ -245,12 +252,19 @@ export function GameProvider({ children }: { children: ReactNode }) {
       try {
         // Compute the bot move and ensure enough time has elapsed so the
         // human's own animation has time to play before the board re-renders
-        // with the bot's response. Teleport animation is 2.0s total
-        // (demat + gap + remat). Slide animation is ~650ms.
+        // with the bot's response. Delay scales with animation-speed setting
+        // so replay/slow modes remain visually readable.
         const prevMove = state.history[state.history.length - 1];
-        const minThinkMs = prevMove?.isPortalEntry ? 2100 : 750;
+        const speed = store.settings.animationSpeed;
+        const thinkDelays =
+          speed === "very-slow"
+            ? { slide: 1650, teleport: 3800 }
+            : speed === "slow"
+              ? { slide: 1200, teleport: 2900 }
+              : { slide: 900, teleport: 2200 };
+        const minThinkMs = prevMove?.isPortalEntry ? thinkDelays.teleport : thinkDelays.slide;
         const t0 = performance.now();
-        const move = await chooseBotMove(state, lvl);
+        const move = await chooseBotMove(state, lvl, { allowExternal: mode.kind === "bot" });
         const elapsed = performance.now() - t0;
         if (elapsed < minThinkMs) {
           await new Promise((r) => setTimeout(r, minThinkMs - elapsed));
@@ -267,7 +281,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       }
     })();
     return () => { cancelled = true; };
-  }, [state, mode, result.kind, paused]);
+  }, [state, mode, result.kind, paused, store.settings.animationSpeed]);
 
   // Auto-record result when game ends
   const recordedRef = useRef<number>(-1);
@@ -347,6 +361,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return true;
   }, [state, paused]);
 
+  const replayLastMove = useCallback(() => {
+    if (state.history.length === 0) return;
+    setLastMoveReplayNonce((n) => n + 1);
+  }, [state.history.length]);
+
   const undo = useCallback(() => {
     // Undo twice if playing a bot and it's the human's turn (to remove bot reply + own move).
     dispatch({ type: "undo" });
@@ -354,9 +373,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setSelected(null);
   }, [mode]);
 
-  const newGame = useCallback((m: Mode, p?: Partial<Players>) => {
+  const newGame = useCallback((m: Mode, p?: Partial<Players>, opts?: NewGameOptions) => {
     clearActiveSession();
     noTimerRef.current = false;
+    if (opts?.timerSeconds !== undefined && opts.timerSeconds !== storeRef.current.settings.timerSeconds) {
+      const updated = cloneStore(storeRef.current);
+      updateSettings(updated, { timerSeconds: opts.timerSeconds });
+      setStore(updated);
+      storeRef.current = updated;
+    }
     setMode(m);
     const defaultW = activeProfile?.name ?? "White";
     const defaultB =
@@ -370,11 +395,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "new", initial: fresh });
     setSelected(null);
     setPaused(false);
+    setLastMoveReplayNonce(0);
     // Force the clock to use the freshest timer setting — the caller often
     // updates settings immediately before calling newGame (e.g. the New Game
     // screen), so reading storeRef gives us the value they just picked
     // instead of the stale closure-captured one.
-    const t = storeRef.current.settings.timerSeconds;
+    const t = opts?.timerSeconds ?? storeRef.current.settings.timerSeconds;
     setTimeLeft(t > 0 ? t : Infinity);
   }, [activeProfile]);
 
@@ -389,6 +415,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setSelected(null);
     setHint(null);
     setPaused(false);
+    setLastMoveReplayNonce(0);
     if (opts?.noTimer) setTimeLeft(Infinity);
   }, []);
 
@@ -398,10 +425,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const requestHint = useCallback(() => {
     (async () => {
-      const best = await chooseBotMove(state, 5);
+      const best = await chooseBotMove(state, 5, { allowExternal: mode.kind === "bot" });
       if (best) setHint(best);
     })();
-  }, [state]);
+  }, [state, mode.kind]);
   const clearHint = useCallback(() => setHint(null), []);
 
   const setActiveProfile = useCallback((id: string | null) => {
@@ -458,7 +485,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const value: GameCtx = {
     store, activeProfile, state, mode, players, selected, legalFromSelected, timeLeft, isBotThinking, result,
     paused, togglePause,
-    select, tryMove, undo, newGame, forfeit,
+    select, tryMove, lastMoveReplayNonce, replayLastMove, undo, newGame, forfeit,
     loadPosition,
     recordPuzzleSolved, recordPuzzleAttempt,
     hint, requestHint, clearHint,

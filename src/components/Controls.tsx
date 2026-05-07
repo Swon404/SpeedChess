@@ -1,7 +1,19 @@
 import { useGame } from "../GameContext";
 
 export function Controls() {
-  const { undo, newGame, mode, result, state, requestHint, hint, clearHint, paused, togglePause } = useGame();
+  const {
+    undo,
+    newGame,
+    mode,
+    result,
+    state,
+    requestHint,
+    hint,
+    clearHint,
+    paused,
+    togglePause,
+    replayLastMove
+  } = useGame();
   const statusText =
     result.kind === "ongoing"
       ? paused
@@ -36,6 +48,13 @@ export function Controls() {
           title="Show a suggested move"
         >
           {hint ? "Hide hint" : "💡 Hint"}
+        </button>
+        <button
+          onClick={replayLastMove}
+          disabled={state.history.length === 0}
+          title="Replay the latest move animation"
+        >
+          ↺ Replay
         </button>
         <button onClick={() => undo()} disabled={state.history.length === 0}>Undo</button>
         <button onClick={() => newGame(mode)}>New Game</button>

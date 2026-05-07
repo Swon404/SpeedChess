@@ -10,6 +10,54 @@
   --legal-capture: rgba(239, 68, 68, 0.65);
   --selected: rgba(250, 204, 21, 0.55);
   --last: rgba(250, 204, 21, 0.25);
+  --anim-slide-ms: 700ms;
+  --anim-demat-ms: 900ms;
+  --anim-remat-ms: 900ms;
+  --anim-remat-delay-ms: 1100ms;
+}
+
+.board.anim-speed-normal {
+  --anim-slide-ms: 700ms;
+  --anim-demat-ms: 900ms;
+  --anim-remat-ms: 900ms;
+  --anim-remat-delay-ms: 1100ms;
+}
+
+.board.anim-speed-slow {
+  --anim-slide-ms: 900ms;
+  --anim-demat-ms: 1100ms;
+  --anim-remat-ms: 1100ms;
+  --anim-remat-delay-ms: 1400ms;
+}
+
+.board.anim-speed-very-slow {
+  --anim-slide-ms: 1200ms;
+  --anim-demat-ms: 1500ms;
+  --anim-remat-ms: 1500ms;
+  --anim-remat-delay-ms: 1900ms;
+}
+
+@media (max-width: 640px) {
+  .board.anim-speed-normal {
+    --anim-slide-ms: 900ms;
+    --anim-demat-ms: 1100ms;
+    --anim-remat-ms: 1100ms;
+    --anim-remat-delay-ms: 1400ms;
+  }
+
+  .board.anim-speed-slow {
+    --anim-slide-ms: 1100ms;
+    --anim-demat-ms: 1300ms;
+    --anim-remat-ms: 1300ms;
+    --anim-remat-delay-ms: 1700ms;
+  }
+
+  .board.anim-speed-very-slow {
+    --anim-slide-ms: 1450ms;
+    --anim-demat-ms: 1800ms;
+    --anim-remat-ms: 1800ms;
+    --anim-remat-delay-ms: 2200ms;
+  }
 }
 
 * { box-sizing: border-box; }
@@ -274,21 +322,21 @@ section label { display: block; margin: 6px 0; }
   height: 100%;
 }
 .piece-sliding {
-  animation: piece-slide 650ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  animation: piece-slide var(--anim-slide-ms) cubic-bezier(0.22, 0.61, 0.36, 1);
   will-change: transform;
 }
 /* Portal teleport: piece dematerialises at origin, rematerialises at destination.
-   Total warp duration: demat (900ms) + gap (200ms) + remat (900ms) = 2.0s. */
+   Total warp duration: demat + delay offset + remat (configured via CSS vars). */
 .piece-dematerialize {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  animation: piece-demat 900ms ease-in forwards;
+  animation: piece-demat var(--anim-demat-ms) ease-in forwards;
   will-change: transform, opacity, filter;
   z-index: 2;
 }
 .piece-rematerialize {
-  animation: piece-remat 900ms 1100ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation: piece-remat var(--anim-remat-ms) var(--anim-remat-delay-ms) cubic-bezier(0.16, 1, 0.3, 1) backwards;
   will-change: transform, opacity, filter;
 }
 @keyframes piece-demat {
@@ -323,6 +371,10 @@ section label { display: block; margin: 6px 0; }
   width: 88%;
   height: 88%;
   filter: drop-shadow(0 2px 2px rgba(0,0,0,0.45));
+}
+.piece-face-180 {
+  transform: rotate(180deg);
+  transform-origin: center;
 }
 .piece-set-neon .piece-svg {
   filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.9)) drop-shadow(0 0 12px rgba(255, 64, 160, 0.5));
@@ -480,12 +532,12 @@ section label { display: block; margin: 6px 0; }
 .controls {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin: 12px 0;
   gap: 8px;
 }
 .controls .status { font-weight: 600; }
-.controls .buttons { display: flex; gap: 8px; }
+.controls .buttons { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 
 .movelist ol {
   list-style: none;

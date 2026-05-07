@@ -19,9 +19,21 @@ interface PendingPromo {
 }
 
 export function Board({ flipped = false }: Props) {
-  const { state, selected, legalFromSelected, select, tryMove, result, store, hint } = useGame();
+  const {
+    state,
+    selected,
+    legalFromSelected,
+    select,
+    tryMove,
+    result,
+    store,
+    mode,
+    hint,
+    lastMoveReplayNonce
+  } = useGame();
   const theme = store.settings.theme;
   const pieceSet = store.settings.pieceSet;
+  const animationSpeed = store.settings.animationSpeed;
   const [pending, setPending] = useState<PendingPromo | null>(null);
 
   const ranks = flipped ? [0, 1, 2, 3, 4, 5, 6, 7] : [7, 6, 5, 4, 3, 2, 1, 0];
@@ -56,10 +68,11 @@ export function Board({ flipped = false }: Props) {
   const wPortals = state.portals?.w ?? [];
   const bPortals = state.portals?.b ?? [];
   const isTeleportMove = !!lastMove?.isPortalEntry;
+  const rotateBlackForFixedBoard = mode.kind === "two-player" && !store.settings.autoFlip;
 
   return (
     <>
-      <div className={`board board-theme-${theme} piece-set-${pieceSet}`}>
+      <div className={`board board-theme-${theme} piece-set-${pieceSet} anim-speed-${animationSpeed}`}>
         {ranks.map((r) => (
           <div key={r} className="board-row">
             {files.map((f) => {
@@ -109,7 +122,7 @@ export function Board({ flipped = false }: Props) {
                   ["--slide-dx" as string]: `${sign * df * 100}%`,
                   ["--slide-dy" as string]: `${sign * dr * 100}%`
                 };
-                slideKey = `slide-${moveIndex}`;
+                slideKey = `slide-${moveIndex}-${lastMoveReplayNonce}`;
               }
               const isRematerializeHere =
                 isTeleportMove &&
@@ -138,7 +151,7 @@ export function Board({ flipped = false }: Props) {
                   )}
                   {piece && (
                     <span
-                      key={isRematerializeHere ? `remat-${moveIndex}` : slideKey}
+                      key={isRematerializeHere ? `remat-${moveIndex}-${lastMoveReplayNonce}` : slideKey}
                       className={
                         isRematerializeHere
                           ? "piece-wrap piece-rematerialize"
@@ -148,20 +161,30 @@ export function Board({ flipped = false }: Props) {
                       }
                       style={slideStyle}
                     >
-                      <Piece color={piece.color} type={piece.type} set={pieceSet} />
+                      <Piece
+                        color={piece.color}
+                        type={piece.type}
+                        set={pieceSet}
+                        rotate={rotateBlackForFixedBoard && piece.color === "b"}
+                      />
                     </span>
                   )}
                   {isDematerializeHere && lastMove && (
                     <span
-                      key={`demat-${moveIndex}`}
+                      key={`demat-${moveIndex}-${lastMoveReplayNonce}`}
                       className="piece-wrap piece-dematerialize"
                       aria-hidden="true"
                     >
-                      <Piece color={lastMove.color} type={lastMove.piece} set={pieceSet} />
+                      <Piece
+                        color={lastMove.color}
+                        type={lastMove.piece}
+                        set={pieceSet}
+                        rotate={rotateBlackForFixedBoard && lastMove.color === "b"}
+                      />
                     </span>
                   )}
                   {isLastTo && lastMove?.captured && store.settings.explodeOnCapture && (
-                    <span key={`boom-${moveIndex}`} className="boom" aria-hidden="true">
+                    <span key={`boom-${moveIndex}-${lastMoveReplayNonce}`} className="boom" aria-hidden="true">
                       <span className="boom-core">💥</span>
                       <span className="boom-bit b1">✨</span>
                       <span className="boom-bit b2">⭐</span>

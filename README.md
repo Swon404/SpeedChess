@@ -4,7 +4,8 @@ Kid-friendly chess PWA built with React 19 + TypeScript + Vite + vite-plugin-pwa
 
 ## Features (v0.1)
 - Two-player pass-and-play with auto-flip
-- Play the bot with 10 difficulty levels (built-in minimax for 1–5, Stockfish WASM hook for 6–10)
+- Play the bot with 20 difficulty levels in standard chess (built-in minimax for 1-4, external Stockfish API for 5-20 with fallback)
+- Portal Chess bot remains local and supports levels 1-10
 - Per-move timer with configurable seconds (10/30/60/120/off). Timeout forfeits **that move only** — game continues.
 - Tap a piece to see where it can go — legal squares highlighted, captures ringed in red
 - Full undo / takeback stack
@@ -28,7 +29,6 @@ npm test
 Pushed to `main` → GitHub Pages via `.github/workflows/deploy.yml`. Update `base` in `vite.config.ts` if the repo name changes.
 
 ## Roadmap
-- Wire Stockfish WASM into `src/engine/bot/stockfish.ts` for bot levels 6–10
 - Mate-in-1/2 puzzles + daily puzzle
 - Mascot coach with contextual commentary
 - Board themes & kid-friendly piece sets

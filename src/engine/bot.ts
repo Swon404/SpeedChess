@@ -64,21 +64,27 @@ function minimax(state: GameState, depth: number, alpha: number, beta: number, m
   }
 }
 
+interface BotOptions {
+  allowExternal?: boolean;
+}
+
 /**
- * Choose a move for the bot at a given difficulty (1-10).
- * Levels 1-5 use the built-in minimax with increasing depth and decreasing randomness.
- * Levels 6-10 delegate to Stockfish WASM (lazy-loaded) — falls back to depth-4 minimax
- * if Stockfish isn't available (e.g. offline first-load).
+ * Choose a move for the bot at a given difficulty (1-20).
+ * Levels 1-4 use the built-in minimax with increasing depth and decreasing randomness.
+ * Levels 5-20 can delegate to an external Stockfish API when enabled; if unavailable,
+ * fall back to local minimax.
  */
-export async function chooseBotMove(state: GameState, level: number): Promise<Move | null> {
+export async function chooseBotMove(state: GameState, level: number, opts?: BotOptions): Promise<Move | null> {
   const moves = allLegalMoves(state);
   if (moves.length === 0) return null;
   const me = state.turn;
+  const normalizedLevel = Math.max(1, Math.min(20, Math.round(level)));
+  const canUseExternal = opts?.allowExternal !== false && !state.portals;
 
-  if (level >= 6) {
+  if (canUseExternal && normalizedLevel >= 5) {
     try {
       const { stockfishBestMove } = await import("./bot/stockfish");
-      const best = await stockfishBestMove(state, level);
+      const best = await stockfishBestMove(state, normalizedLevel);
       if (best) return best;
     } catch {
       // fall through to local minimax
@@ -90,15 +96,15 @@ export async function chooseBotMove(state: GameState, level: number): Promise<Mo
   // Level 1: ~80% random, prefer simple captures otherwise.
   // Level 2: ~50% random, depth-1 search the rest.
   // Level 3: depth-2, occasional blunder.
-  // Level 4: depth-3 clean.
-  // Level 5: depth-3 + capture ordering.
-  // Level 6-10 fallback: depth-4.
-  const blunderChance = { 1: 0.8, 2: 0.5, 3: 0.15, 4: 0.03, 5: 0 }[level as 1 | 2 | 3 | 4 | 5] ?? 0;
-  const depth = level <= 2 ? 1 : level <= 3 ? 2 : level <= 5 ? 3 : 4;
+  // Level 4: depth-2 clean.
+  // Level 5+: deterministic minimax fallback if external engine is unavailable.
+  const blunderChanceByLevel: Record<number, number> = { 1: 0.8, 2: 0.5, 3: 0.15, 4: 0.03 };
+  const blunderChance = blunderChanceByLevel[normalizedLevel] ?? 0;
+  const depth = normalizedLevel <= 2 ? 1 : normalizedLevel <= 4 ? 2 : normalizedLevel <= 8 ? 3 : 4;
 
   if (rng() < blunderChance) {
     const captures = moves.filter((m) => m.captured);
-    if (level === 1 || captures.length === 0) return randomChoice(moves, rng);
+    if (normalizedLevel === 1 || captures.length === 0) return randomChoice(moves, rng);
     return randomChoice(captures, rng);
   }
 

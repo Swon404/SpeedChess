@@ -23,6 +23,26 @@ export function SettingsScreen() {
       </section>
 
       <section>
+        <h3>Move animation speed</h3>
+        <div className="difficulty">
+          {([
+            { key: "normal" as const, label: "Normal" },
+            { key: "slow" as const, label: "Slow" },
+            { key: "very-slow" as const, label: "Very Slow" }
+          ]).map((v) => (
+            <button
+              key={v.key}
+              className={v.key === s.animationSpeed ? "pill active" : "pill"}
+              onClick={() => updateSetting("animationSpeed", v.key)}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
+        <p className="hint">Slow or Very Slow is easier to follow on smaller screens.</p>
+      </section>
+
+      <section>
         <h3>Board theme</h3>
         <div className="difficulty">
           {(["wood", "blue", "green", "neon"] as const).map((t) => (
