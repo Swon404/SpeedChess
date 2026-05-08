@@ -213,7 +213,15 @@ export function NewGameScreen() {
             />
             {" "}Auto-turn board after each move
           </label>
-          <p className="hint">Turn this off to keep the board fixed from White's side.</p>
+          <label>
+            <input
+              type="checkbox"
+              checked={store.settings.rotateBlackPiecesFixedBoard}
+              onChange={(e) => updateSetting("rotateBlackPiecesFixedBoard", e.target.checked)}
+            />
+            {" "}Rotate black pieces 180° when board is fixed
+          </label>
+          <p className="hint">Turn off auto-turn to keep the board fixed from White's side. Optional: rotate black pieces for over-the-board seating.</p>
         </section>
       )}
 

@@ -31,6 +31,7 @@ export interface Settings {
   activeProfileId: string | null;
   timerSeconds: number; // 0 = off
   animationSpeed: AnimationSpeed;
+  rotateBlackPiecesFixedBoard: boolean;
   theme: BoardTheme;
   pieceSet: PieceSet;
   sound: boolean;
@@ -59,6 +60,7 @@ const DEFAULT_SETTINGS: Settings = {
   activeProfileId: null,
   timerSeconds: 30,
   animationSpeed: "slow",
+  rotateBlackPiecesFixedBoard: false,
   theme: "wood",
   pieceSet: "modern",
   sound: true,

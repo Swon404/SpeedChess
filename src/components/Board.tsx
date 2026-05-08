@@ -68,7 +68,10 @@ export function Board({ flipped = false }: Props) {
   const wPortals = state.portals?.w ?? [];
   const bPortals = state.portals?.b ?? [];
   const isTeleportMove = !!lastMove?.isPortalEntry;
-  const rotateBlackForFixedBoard = mode.kind === "two-player" && !store.settings.autoFlip;
+  const rotateBlackForFixedBoard =
+    mode.kind === "two-player" &&
+    !store.settings.autoFlip &&
+    store.settings.rotateBlackPiecesFixedBoard;
 
   return (
     <>

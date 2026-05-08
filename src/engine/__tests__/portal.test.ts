@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { GameState, initialState, parseFEN, parseSquare, positionKey, sqEq } from "../board";
-import { allLegalMoves, legalMovesFrom, makeMove, teleportTargets } from "../rules";
+import { allLegalMoves, inCheck, legalMovesFrom, makeMove, teleportTargets } from "../rules";
 
 /** Wrap a state into Portal Chess mode with given creator type. */
 function asPortal(s: GameState, creator: "Q" | "R" | "B" | "N" | "K" = "Q"): GameState {
@@ -134,6 +134,18 @@ describe("Portal Chess: teleport entry", () => {
     const moves = legalMovesFrom(s, parseSquare("g4"))
       .filter((m) => m.isPortalEntry && sqEq(m.to, parseSquare("f6")));
     expect(moves.length).toBe(1);
+  });
+
+  it("Teleport move can immediately give check", () => {
+    const s = asPortal(parseFEN("4k3/4p3/8/8/8/8/8/K7 w - - 0 1"));
+    s.board[3][6] = { type: "N", color: "w" }; // Ng4 on its own portal
+    s.portals = { w: [parseSquare("g4")], b: [], max: 1 };
+    const move = legalMovesFrom(s, parseSquare("g4"))
+      .find((m) => m.isPortalEntry && sqEq(m.to, parseSquare("f6")));
+    expect(move).toBeDefined();
+
+    const ns = makeMove(s, move!);
+    expect(inCheck(ns, "b")).toBe(true);
   });
 
   it("With adjacency rule OFF (default), targets next to other pieces are allowed", () => {

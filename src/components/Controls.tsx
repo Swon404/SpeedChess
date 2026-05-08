@@ -1,4 +1,5 @@
 import { useGame } from "../GameContext";
+import { inCheck } from "../engine/rules";
 
 export function Controls() {
   const {
@@ -14,11 +15,14 @@ export function Controls() {
     togglePause,
     replayLastMove
   } = useGame();
+  const checkNow = result.kind === "ongoing" && inCheck(state, state.turn);
   const statusText =
     result.kind === "ongoing"
       ? paused
         ? "⏸ Paused"
-        : `${state.turn === "w" ? "White" : "Black"} to move`
+        : checkNow
+          ? `Check — ${state.turn === "w" ? "White" : "Black"} to move`
+          : `${state.turn === "w" ? "White" : "Black"} to move`
       : result.kind === "checkmate"
       ? `Checkmate — ${result.winner === "w" ? "White" : "Black"} wins`
       : result.kind === "stalemate"

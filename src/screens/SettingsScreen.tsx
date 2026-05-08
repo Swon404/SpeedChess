@@ -75,6 +75,7 @@ export function SettingsScreen() {
         <label><input type="checkbox" checked={s.sound} onChange={(e) => updateSetting("sound", e.target.checked)} /> Sound effects</label>
         <label><input type="checkbox" checked={s.haptics} onChange={(e) => updateSetting("haptics", e.target.checked)} /> Haptics (iPhone)</label>
         <label><input type="checkbox" checked={s.autoFlip} onChange={(e) => updateSetting("autoFlip", e.target.checked)} /> Auto-flip board in 2-player mode</label>
+        <label><input type="checkbox" checked={s.rotateBlackPiecesFixedBoard} onChange={(e) => updateSetting("rotateBlackPiecesFixedBoard", e.target.checked)} /> Rotate black pieces 180° on fixed 2-player board</label>
         <label><input type="checkbox" checked={s.showThreats} onChange={(e) => updateSetting("showThreats", e.target.checked)} /> Show threatened pieces (learn mode)</label>
         <label><input type="checkbox" checked={s.explodeOnCapture} onChange={(e) => updateSetting("explodeOnCapture", e.target.checked)} /> 💥 Explode pieces on capture</label>
       </section>
