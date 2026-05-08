@@ -486,6 +486,7 @@ section label { display: block; margin: 6px 0; }
 .timer-control:hover { filter: brightness(1.2); }
 .clock-side {
   flex: 1;
+  min-width: 0;
   background: var(--panel);
   padding: 8px 12px;
   border-radius: 10px;
@@ -493,6 +494,12 @@ section label { display: block; margin: 6px 0; }
   justify-content: space-between;
   align-items: center;
   border: 1px solid transparent;
+}
+.clock-side > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .clock-side.active { border-color: var(--accent); }
 .clock-side strong { font-variant-numeric: tabular-nums; font-size: 1.1rem; }
@@ -536,8 +543,39 @@ section label { display: block; margin: 6px 0; }
   margin: 12px 0;
   gap: 8px;
 }
-.controls .status { font-weight: 600; }
+.controls .status {
+  font-weight: 600;
+  line-height: 1.25;
+}
 .controls .buttons { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+@media (max-width: 640px) {
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .controls .status {
+    min-height: 2.5em;
+  }
+
+  .controls .buttons {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    justify-content: stretch;
+    width: 100%;
+  }
+
+  .controls .buttons button {
+    width: 100%;
+    min-width: 0;
+    padding: 8px 6px;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
 
 .movelist ol {
   list-style: none;

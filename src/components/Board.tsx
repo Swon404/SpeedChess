@@ -61,7 +61,8 @@ export function Board({ flipped = false }: Props) {
   };
 
   const lastMove = state.history[state.history.length - 1];
-  const moveIndex = state.history.length;
+  // Include replay nonce so "Replay" re-mounts animated pieces and restarts keyframes.
+  const moveAnimIndex = state.history.length + lastMoveReplayNonce;
   const checkedKing = result.kind === "ongoing" && inCheck(state, state.turn)
     ? findKing(state, state.turn)
     : null;
@@ -125,7 +126,7 @@ export function Board({ flipped = false }: Props) {
                   ["--slide-dx" as string]: `${sign * df * 100}%`,
                   ["--slide-dy" as string]: `${sign * dr * 100}%`
                 };
-                slideKey = `slide-${moveIndex}-${lastMoveReplayNonce}`;
+                slideKey = `slide-${moveAnimIndex}`;
               }
               const isRematerializeHere =
                 isTeleportMove &&
@@ -154,7 +155,7 @@ export function Board({ flipped = false }: Props) {
                   )}
                   {piece && (
                     <span
-                      key={isRematerializeHere ? `remat-${moveIndex}-${lastMoveReplayNonce}` : slideKey}
+                      key={isRematerializeHere ? `remat-${moveAnimIndex}` : slideKey}
                       className={
                         isRematerializeHere
                           ? "piece-wrap piece-rematerialize"
@@ -174,7 +175,7 @@ export function Board({ flipped = false }: Props) {
                   )}
                   {isDematerializeHere && lastMove && (
                     <span
-                      key={`demat-${moveIndex}-${lastMoveReplayNonce}`}
+                      key={`demat-${moveAnimIndex}`}
                       className="piece-wrap piece-dematerialize"
                       aria-hidden="true"
                     >
@@ -187,7 +188,7 @@ export function Board({ flipped = false }: Props) {
                     </span>
                   )}
                   {isLastTo && lastMove?.captured && store.settings.explodeOnCapture && (
-                    <span key={`boom-${moveIndex}-${lastMoveReplayNonce}`} className="boom" aria-hidden="true">
+                    <span key={`boom-${moveAnimIndex}`} className="boom" aria-hidden="true">
                       <span className="boom-core">💥</span>
                       <span className="boom-bit b1">✨</span>
                       <span className="boom-bit b2">⭐</span>
