@@ -258,10 +258,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
         const speed = store.settings.animationSpeed;
         const thinkDelays =
           speed === "very-slow"
-            ? { slide: 1650, teleport: 3800 }
+            ? { slide: 2300, teleport: 6200 }
             : speed === "slow"
-              ? { slide: 1200, teleport: 2900 }
-              : { slide: 900, teleport: 2200 };
+              ? { slide: 1600, teleport: 4800 }
+              : { slide: 1200, teleport: 3700 };
         const minThinkMs = prevMove?.isPortalEntry ? thinkDelays.teleport : thinkDelays.slide;
         const t0 = performance.now();
         const move = await chooseBotMove(state, lvl, { allowExternal: mode.kind === "bot" });

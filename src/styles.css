@@ -10,53 +10,53 @@
   --legal-capture: rgba(239, 68, 68, 0.65);
   --selected: rgba(250, 204, 21, 0.55);
   --last: rgba(250, 204, 21, 0.25);
-  --anim-slide-ms: 700ms;
-  --anim-demat-ms: 900ms;
-  --anim-remat-ms: 900ms;
-  --anim-remat-delay-ms: 1100ms;
+  --anim-slide-ms: 900ms;
+  --anim-demat-ms: 1300ms;
+  --anim-remat-ms: 1300ms;
+  --anim-remat-delay-ms: 1700ms;
 }
 
 .board.anim-speed-normal {
-  --anim-slide-ms: 700ms;
-  --anim-demat-ms: 900ms;
-  --anim-remat-ms: 900ms;
-  --anim-remat-delay-ms: 1100ms;
+  --anim-slide-ms: 900ms;
+  --anim-demat-ms: 1300ms;
+  --anim-remat-ms: 1300ms;
+  --anim-remat-delay-ms: 1700ms;
 }
 
 .board.anim-speed-slow {
-  --anim-slide-ms: 900ms;
-  --anim-demat-ms: 1100ms;
-  --anim-remat-ms: 1100ms;
-  --anim-remat-delay-ms: 1400ms;
+  --anim-slide-ms: 1200ms;
+  --anim-demat-ms: 1700ms;
+  --anim-remat-ms: 1700ms;
+  --anim-remat-delay-ms: 2200ms;
 }
 
 .board.anim-speed-very-slow {
-  --anim-slide-ms: 1200ms;
-  --anim-demat-ms: 1500ms;
-  --anim-remat-ms: 1500ms;
-  --anim-remat-delay-ms: 1900ms;
+  --anim-slide-ms: 1700ms;
+  --anim-demat-ms: 2300ms;
+  --anim-remat-ms: 2300ms;
+  --anim-remat-delay-ms: 3000ms;
 }
 
 @media (max-width: 640px) {
   .board.anim-speed-normal {
-    --anim-slide-ms: 900ms;
-    --anim-demat-ms: 1100ms;
-    --anim-remat-ms: 1100ms;
-    --anim-remat-delay-ms: 1400ms;
+    --anim-slide-ms: 1100ms;
+    --anim-demat-ms: 1500ms;
+    --anim-remat-ms: 1500ms;
+    --anim-remat-delay-ms: 2000ms;
   }
 
   .board.anim-speed-slow {
-    --anim-slide-ms: 1100ms;
-    --anim-demat-ms: 1300ms;
-    --anim-remat-ms: 1300ms;
-    --anim-remat-delay-ms: 1700ms;
+    --anim-slide-ms: 1500ms;
+    --anim-demat-ms: 2000ms;
+    --anim-remat-ms: 2000ms;
+    --anim-remat-delay-ms: 2600ms;
   }
 
   .board.anim-speed-very-slow {
-    --anim-slide-ms: 1450ms;
-    --anim-demat-ms: 1800ms;
-    --anim-remat-ms: 1800ms;
-    --anim-remat-delay-ms: 2200ms;
+    --anim-slide-ms: 2100ms;
+    --anim-demat-ms: 2600ms;
+    --anim-remat-ms: 2600ms;
+    --anim-remat-delay-ms: 3400ms;
   }
 }
 

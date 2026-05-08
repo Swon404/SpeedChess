@@ -3,7 +3,7 @@ import { useGame } from "../GameContext";
 const TIMER_OPTIONS = [0, 10, 30, 60, 120] as const;
 
 export function Clock() {
-  const { timeLeft, state, isBotThinking, store, players, updateSetting } = useGame();
+  const { timeLeft, state, store, players, updateSetting } = useGame();
   const current = store.settings.timerSeconds;
   const off = current === 0;
   const secs = off || !isFinite(timeLeft) ? null : Math.max(0, timeLeft);
@@ -34,7 +34,7 @@ export function Clock() {
         {renderBadge(state.turn === "w")}
       </div>
       <div className={`clock-side ${state.turn === "b" ? "active" : ""}`}>
-        <span>♟ {players.b} {isBotThinking ? "(thinking…)" : ""}</span>
+        <span>♟ {players.b}</span>
         {renderBadge(state.turn === "b")}
       </div>
     </div>
