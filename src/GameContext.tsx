@@ -257,10 +257,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
         const speed = store.settings.animationSpeed;
         const minThinkMs =
           speed === "very-slow"
-            ? 1900
+            ? 950
             : speed === "slow"
-              ? 1200
-              : 800;
+              ? 600
+              : 400;
         const t0 = performance.now();
         const move = await chooseBotMove(state, lvl, { allowExternal: mode.kind === "bot" });
         const elapsed = performance.now() - t0;

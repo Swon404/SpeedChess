@@ -10,13 +10,13 @@ import { useGame } from "../GameContext";
 
 function slideDurationMs(speed: "normal" | "slow" | "very-slow", isMobile: boolean): number {
   if (isMobile) {
-    if (speed === "very-slow") return 1700;
-    if (speed === "slow") return 1100;
-    return 700;
+    if (speed === "very-slow") return 850;
+    if (speed === "slow") return 550;
+    return 350;
   }
-  if (speed === "very-slow") return 1300;
-  if (speed === "slow") return 800;
-  return 500;
+  if (speed === "very-slow") return 650;
+  if (speed === "slow") return 400;
+  return 250;
 }
 
 export function GameScreen() {

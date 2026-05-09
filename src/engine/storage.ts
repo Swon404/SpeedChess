@@ -24,7 +24,7 @@ export interface ProfileStats {
 }
 
 export type BoardTheme = "wood" | "blue" | "green" | "neon";
-export type PieceSet = "classic" | "modern" | "neon" | "emoji";
+export type PieceSet = "classic" | "modern" | "neon";
 export type AnimationSpeed = "normal" | "slow" | "very-slow";
 
 export interface Settings {
@@ -61,14 +61,19 @@ const DEFAULT_SETTINGS: Settings = {
   timerSeconds: 30,
   animationSpeed: "slow",
   rotateBlackPiecesFixedBoard: false,
-  theme: "wood",
-  pieceSet: "modern",
+  theme: "neon",
+  pieceSet: "neon",
   sound: true,
   haptics: true,
   autoFlip: true,
   showThreats: false,
   explodeOnCapture: false
 };
+
+function normalizePieceSet(value: unknown): PieceSet {
+  if (value === "classic" || value === "modern" || value === "neon") return value;
+  return "neon";
+}
 
 function emptyStats(): ProfileStats {
   return {
@@ -83,7 +88,12 @@ export function load(): Store {
     const raw = localStorage.getItem(KEY);
     if (!raw) return { profiles: [], settings: { ...DEFAULT_SETTINGS }, savedGames: {} };
     const parsed = JSON.parse(raw) as Store;
-    parsed.settings = { ...DEFAULT_SETTINGS, ...parsed.settings };
+    const rawSettings = parsed.settings as Partial<Settings> | undefined;
+    parsed.settings = {
+      ...DEFAULT_SETTINGS,
+      ...rawSettings,
+      pieceSet: normalizePieceSet(rawSettings?.pieceSet)
+    };
     parsed.savedGames = parsed.savedGames ?? {};
     return parsed;
   } catch {

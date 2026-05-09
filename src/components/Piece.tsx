@@ -1,7 +1,6 @@
 import type { Color, PieceType } from "../engine/board";
 import type { PieceSet } from "../engine/storage";
 import { PieceSVG } from "./PieceSVG";
-import { MinecraftPiece } from "./MinecraftPieces";
 
 const GLYPH: Record<string, string> = {
   wK: "\u2654", wQ: "\u2655", wR: "\u2656", wB: "\u2657", wN: "\u2658", wP: "\u2659",
@@ -21,13 +20,6 @@ export function Piece({ color, type, set, rotate = false }: Props) {
     return (
       <span className={`piece-glyph piece-${color} ${faceClass}`}>
         {GLYPH[color + type]}
-      </span>
-    );
-  }
-  if (set === "emoji") {
-    return (
-      <span className={`piece-mc piece-${color} ${faceClass}`}>
-        <MinecraftPiece color={color} type={type} />
       </span>
     );
   }

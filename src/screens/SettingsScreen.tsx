@@ -59,15 +59,14 @@ export function SettingsScreen() {
           {([
             { key: "classic" as const, label: "Classic" },
             { key: "modern" as const, label: "Modern" },
-            { key: "neon" as const, label: "Neon" },
-            { key: "emoji" as const, label: "Minecraft" }
+            { key: "neon" as const, label: "Neon" }
           ]).map((t) => (
             <button key={t.key}
               className={t.key === s.pieceSet ? "pill active" : "pill"}
               onClick={() => updateSetting("pieceSet", t.key)}>{t.label}</button>
           ))}
         </div>
-        <p className="hint">Classic = Unicode ♚ · Modern = crisp SVG · Neon = glow · Minecraft = ⛏️ Steve, Alex, Creeper, Enderman, Skeleton, Zombie (light/dark plates for each side)</p>
+        <p className="hint">Classic = Unicode ♚ · Modern = crisp SVG · Neon = glow</p>
       </section>
 
       <section>
