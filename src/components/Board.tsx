@@ -1,4 +1,4 @@
-import { CSSProperties, useState } from "react";
+import { CSSProperties, useLayoutEffect, useState } from "react";
 import { Move, Piece as PieceT, Square, squareName } from "../engine/board";
 import { findKing, inCheck } from "../engine/rules";
 import { useGame } from "../GameContext";
@@ -6,6 +6,17 @@ import { Piece } from "./Piece";
 
 function isLegalTarget(legal: Move[], sq: Square): Move | undefined {
   return legal.find((m) => m.to.file === sq.file && m.to.rank === sq.rank);
+}
+
+function slideDurationMs(speed: "normal" | "slow" | "very-slow", isMobile: boolean): number {
+  if (isMobile) {
+    if (speed === "very-slow") return 1700;
+    if (speed === "slow") return 1100;
+    return 700;
+  }
+  if (speed === "very-slow") return 1300;
+  if (speed === "slow") return 800;
+  return 500;
 }
 
 interface Props {
@@ -35,6 +46,8 @@ export function Board({ flipped = false }: Props) {
   const pieceSet = store.settings.pieceSet;
   const animationSpeed = store.settings.animationSpeed;
   const [pending, setPending] = useState<PendingPromo | null>(null);
+  const [isAnimatingLastMove, setIsAnimatingLastMove] = useState(false);
+  const [showCaptureBoom, setShowCaptureBoom] = useState(false);
 
   const ranks = flipped ? [0, 1, 2, 3, 4, 5, 6, 7] : [7, 6, 5, 4, 3, 2, 1, 0];
   const files = flipped ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
@@ -68,11 +81,50 @@ export function Board({ flipped = false }: Props) {
     : null;
   const wPortals = state.portals?.w ?? [];
   const bPortals = state.portals?.b ?? [];
-  const isTeleportMove = !!lastMove?.isPortalEntry;
   const rotateBlackForFixedBoard =
     mode.kind === "two-player" &&
     !store.settings.autoFlip &&
     store.settings.rotateBlackPiecesFixedBoard;
+
+  useLayoutEffect(() => {
+    const current = state.history[state.history.length - 1];
+    setShowCaptureBoom(false);
+
+    if (!current || current.from.file < 0 || current.to.file < 0) {
+      setIsAnimatingLastMove(false);
+      return;
+    }
+
+    const isMobile =
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 640px)").matches;
+    const durationMs = slideDurationMs(animationSpeed, isMobile);
+
+    if (durationMs <= 0) {
+      setIsAnimatingLastMove(false);
+      if (current.captured && store.settings.explodeOnCapture) {
+        setShowCaptureBoom(true);
+        const boomId = window.setTimeout(() => setShowCaptureBoom(false), 620);
+        return () => window.clearTimeout(boomId);
+      }
+      return;
+    }
+
+    setIsAnimatingLastMove(true);
+    let boomId: number | undefined;
+    const finishId = window.setTimeout(() => {
+      setIsAnimatingLastMove(false);
+      if (current.captured && store.settings.explodeOnCapture) {
+        setShowCaptureBoom(true);
+        boomId = window.setTimeout(() => setShowCaptureBoom(false), 620);
+      }
+    }, durationMs);
+
+    return () => {
+      window.clearTimeout(finishId);
+      if (boomId !== undefined) window.clearTimeout(boomId);
+    };
+  }, [state.history.length, lastMoveReplayNonce, animationSpeed, store.settings.explodeOnCapture]);
 
   return (
     <>
@@ -94,6 +146,9 @@ export function Board({ flipped = false }: Props) {
               const isHintTo = hint && hint.to.file === f && hint.to.rank === r;
               const isPortalW = wPortals.some((p) => p.file === f && p.rank === r);
               const isPortalB = bPortals.some((p) => p.file === f && p.rank === r);
+              const slideEnd = lastMove?.portalTo ?? lastMove?.to;
+              const isSlideDestination =
+                !!slideEnd && slideEnd.file === f && slideEnd.rank === r;
               const isTeleportTarget =
                 !!legal && !!legal.isPortalEntry;
               const classes = [
@@ -103,6 +158,7 @@ export function Board({ flipped = false }: Props) {
                 legal && !isTeleportTarget ? (piece ? "legal-capture" : "legal-move") : "",
                 isTeleportTarget ? "legal-teleport" : "",
                 (isLastFrom || isLastTo || isLastTeleport) ? "last-move" : "",
+                isSlideDestination && isAnimatingLastMove ? "animating-destination" : "",
                 isChecked ? "in-check" : "",
                 isHintFrom ? "hint-from" : "",
                 isHintTo ? "hint-to" : ""
@@ -113,12 +169,11 @@ export function Board({ flipped = false }: Props) {
               // landing (portalTo). Otherwise slide to `to` as usual.
               let slideStyle: CSSProperties | undefined;
               let slideKey: string | undefined;
-              const slideEnd = lastMove?.portalTo ?? lastMove?.to;
               const slideHere =
                 slideEnd && slideEnd.file === f && slideEnd.rank === r && lastMove && piece;
-              // Suppress the slide animation for teleport moves; we use a
-              // dematerialise/rematerialise effect instead.
-              if (slideHere && lastMove && slideEnd && !isTeleportMove) {
+              // Animate every move as a continuous linear slide. For portal
+              // entries, slide from `from` directly to the final `portalTo`.
+              if (slideHere && lastMove && slideEnd) {
                 const df = lastMove.from.file - slideEnd.file;
                 const dr = slideEnd.rank - lastMove.from.rank;
                 const sign = flipped ? -1 : 1;
@@ -128,17 +183,13 @@ export function Board({ flipped = false }: Props) {
                 };
                 slideKey = `slide-${moveAnimIndex}`;
               }
-              const isRematerializeHere =
-                isTeleportMove &&
-                lastMove?.portalTo &&
-                lastMove.portalTo.file === f &&
-                lastMove.portalTo.rank === r &&
-                piece;
-              const isDematerializeHere =
-                isTeleportMove &&
-                lastMove &&
-                lastMove.from.file === f &&
-                lastMove.from.rank === r;
+              const capturedColor =
+                lastMove?.color === "w" ? "b" : "w";
+              const showCapturedGhost =
+                isLastTo &&
+                isAnimatingLastMove &&
+                !!lastMove?.captured &&
+                !lastMove?.isEnPassant;
 
               return (
                 <button
@@ -153,15 +204,23 @@ export function Board({ flipped = false }: Props) {
                       aria-hidden="true"
                     />
                   )}
+                  {showCapturedGhost && lastMove?.captured && (
+                    <span className="captured-ghost" aria-hidden="true">
+                      <Piece
+                        color={capturedColor}
+                        type={lastMove.captured}
+                        set={pieceSet}
+                        rotate={rotateBlackForFixedBoard && capturedColor === "b"}
+                      />
+                    </span>
+                  )}
                   {piece && (
                     <span
-                      key={isRematerializeHere ? `remat-${moveAnimIndex}` : slideKey}
+                      key={slideKey}
                       className={
-                        isRematerializeHere
-                          ? "piece-wrap piece-rematerialize"
-                          : slideKey
-                            ? "piece-wrap piece-sliding"
-                            : "piece-wrap"
+                        slideKey && isAnimatingLastMove
+                          ? "piece-wrap piece-sliding"
+                          : "piece-wrap"
                       }
                       style={slideStyle}
                     >
@@ -173,21 +232,7 @@ export function Board({ flipped = false }: Props) {
                       />
                     </span>
                   )}
-                  {isDematerializeHere && lastMove && (
-                    <span
-                      key={`demat-${moveAnimIndex}`}
-                      className="piece-wrap piece-dematerialize"
-                      aria-hidden="true"
-                    >
-                      <Piece
-                        color={lastMove.color}
-                        type={lastMove.piece}
-                        set={pieceSet}
-                        rotate={rotateBlackForFixedBoard && lastMove.color === "b"}
-                      />
-                    </span>
-                  )}
-                  {isLastTo && lastMove?.captured && store.settings.explodeOnCapture && (
+                  {isLastTo && showCaptureBoom && lastMove?.captured && !lastMove?.isEnPassant && (
                     <span key={`boom-${moveAnimIndex}`} className="boom" aria-hidden="true">
                       <span className="boom-core">💥</span>
                       <span className="boom-bit b1">✨</span>

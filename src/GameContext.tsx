@@ -254,15 +254,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
         // human's own animation has time to play before the board re-renders
         // with the bot's response. Delay scales with animation-speed setting
         // so replay/slow modes remain visually readable.
-        const prevMove = state.history[state.history.length - 1];
         const speed = store.settings.animationSpeed;
-        const thinkDelays =
+        const minThinkMs =
           speed === "very-slow"
-            ? { slide: 2300, teleport: 6200 }
+            ? 1900
             : speed === "slow"
-              ? { slide: 1600, teleport: 4800 }
-              : { slide: 1200, teleport: 3700 };
-        const minThinkMs = prevMove?.isPortalEntry ? thinkDelays.teleport : thinkDelays.slide;
+              ? 1200
+              : 800;
         const t0 = performance.now();
         const move = await chooseBotMove(state, lvl, { allowExternal: mode.kind === "bot" });
         const elapsed = performance.now() - t0;
