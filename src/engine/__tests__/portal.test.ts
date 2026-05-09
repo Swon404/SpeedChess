@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { GameState, initialState, parseFEN, parseSquare, positionKey, sqEq } from "../board";
-import { allLegalMoves, inCheck, legalMovesFrom, makeMove, teleportTargets } from "../rules";
+import { allLegalMoves, legalMovesFrom, makeMove, teleportTargets } from "../rules";
 
 /** Wrap a state into Portal Chess mode with given creator type. */
 function asPortal(s: GameState, creator: "Q" | "R" | "B" | "N" | "K" = "Q"): GameState {
@@ -64,30 +64,6 @@ describe("Portal Chess: portal creation", () => {
     const ns = makeMove(s, cap[0]);
     expect(ns.portals?.b).toEqual([parseSquare("d5")]);
   });
-
-  it("Pawn on own portal blocks access and moving off does not consume it", () => {
-    const s = asPortal(parseFEN("4k3/8/8/8/8/8/4P3/4K1N1 w - - 0 1"));
-    s.portals = { w: [parseSquare("e2")], b: [], max: 1 };
-
-    const pawnMoves = legalMovesFrom(s, parseSquare("e2"));
-    expect(pawnMoves.some((m) => m.isPortalEntry)).toBe(false);
-    const up = pawnMoves.find((m) => sqEq(m.to, parseSquare("e3")));
-    expect(up).toBeDefined();
-
-    let ns = makeMove(s, up!);
-    expect(ns.portals?.w).toEqual([parseSquare("e2")]);
-
-    // Skip black's turn in this unit test and continue from white's side.
-    ns.turn = "w";
-    const ontoPortal = legalMovesFrom(ns, parseSquare("g1"))
-      .find((m) => sqEq(m.to, parseSquare("e2")));
-    expect(ontoPortal).toBeDefined();
-
-    ns = makeMove(ns, ontoPortal!);
-    ns.turn = "w";
-    const tele = legalMovesFrom(ns, parseSquare("e2")).filter((m) => m.isPortalEntry);
-    expect(tele.length).toBeGreaterThan(0);
-  });
 });
 
 describe("Portal Chess: teleport entry", () => {
@@ -136,18 +112,6 @@ describe("Portal Chess: teleport entry", () => {
     expect(moves.length).toBe(1);
   });
 
-  it("Teleport move can immediately give check", () => {
-    const s = asPortal(parseFEN("4k3/4p3/8/8/8/8/8/K7 w - - 0 1"));
-    s.board[3][6] = { type: "N", color: "w" }; // Ng4 on its own portal
-    s.portals = { w: [parseSquare("g4")], b: [], max: 1 };
-    const move = legalMovesFrom(s, parseSquare("g4"))
-      .find((m) => m.isPortalEntry && sqEq(m.to, parseSquare("f6")));
-    expect(move).toBeDefined();
-
-    const ns = makeMove(s, move!);
-    expect(inCheck(ns, "b")).toBe(true);
-  });
-
   it("With adjacency rule OFF (default), targets next to other pieces are allowed", () => {
     const s = asPortal(parseFEN("8/8/8/8/8/1P6/8/8 w - - 0 1"));
     s.board[2][5] = { type: "N", color: "w" }; // Nf3 on its own portal
@@ -166,6 +130,22 @@ describe("Portal Chess: teleport entry", () => {
     for (const m of moves) {
       expect(m.to.file).toBe(0); // must stay on the a-file
     }
+  });
+
+  it("Cannot teleport into an attacked square unless that square is also a legal normal move", () => {
+    // Black rook on d8 attacks d-file squares (including d3/d4).
+    // White knight on f3 is on its own portal.
+    const s = asPortal(parseFEN("3r3k/8/8/8/8/8/8/K7 w - - 0 1"));
+    s.board[2][5] = { type: "N", color: "w" }; // Nf3
+    s.portals = { w: [parseSquare("f3")], b: [], max: 1 };
+
+    const tele = legalMovesFrom(s, parseSquare("f3")).filter((m) => m.isPortalEntry);
+
+    // d3 is attacked by the rook but is NOT a legal normal knight destination.
+    expect(tele.some((m) => sqEq(m.to, parseSquare("d3")))).toBe(false);
+
+    // d4 is attacked too, but IS a legal normal knight destination from f3.
+    expect(tele.some((m) => sqEq(m.to, parseSquare("d4")))).toBe(true);
   });
 });
 

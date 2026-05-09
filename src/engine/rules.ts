@@ -303,12 +303,13 @@ export function makeMove(state: GameState, move: Move): GameState {
   // Capture happens at move.to. Clear the destination square (handles capture).
   ns.board[move.to.rank][move.to.file] = null;
 
-  // Portal Chess (deferred warp): only non-pawn, non-creator pieces consume
-  // their own portal when leaving it (normal move or teleport). Pawns simply
-  // stand on portals and block access until they move away.
+  // Portal Chess (deferred warp): the portal under a non-creator piece is
+  // consumed when the piece leaves it (whether by normal move or teleport).
+  // The creator piece doesn't use portals, so its own movement never consumes
+  // a portal under it (the creator simply leaves it behind).
   if (ns.portals && ns.portalCreators) {
     const creator = ns.portalCreators[piece.color];
-    if (piece.type !== "P" && piece.type !== creator) {
+    if (piece.type !== creator) {
       const ownPortalAtFrom = ns.portals[piece.color].some((p) => sqEq(p, move.from));
       if (ownPortalAtFrom) {
         ns.portals[piece.color] = ns.portals[piece.color].filter((p) => !sqEq(p, move.from));
@@ -416,6 +417,13 @@ export function legalMovesFrom(state: GameState, from: Square): Move[] {
     if (!inCheck(ns, p.color)) out.push(m);
   }
 
+  // For portal safety rule: track legal non-portal destinations from this
+  // square. Teleporting into an attacked square is only allowed when this
+  // piece could already move to that destination without using a portal.
+  const normalLegalTargets = new Set(
+    out.map((m) => `${m.to.file},${m.to.rank}`)
+  );
+
   // Portal Chess (deferred warp): if this piece is currently sitting on its
   // own side's portal, it may also teleport to any empty square. Pawns and
   // the creator piece can't use portals.
@@ -438,6 +446,9 @@ export function legalMovesFrom(state: GameState, from: Square): Move[] {
       };
       const ns = makeMove(state, tpMove);
       if (inCheck(ns, p.color)) continue;
+      const attackedAfterTeleport = isSquareAttacked(ns, t, opposite(p.color));
+      const legalNormally = normalLegalTargets.has(`${t.file},${t.rank}`);
+      if (attackedAfterTeleport && !legalNormally) continue;
       if (adjacency) {
         const adjacent = teleportIsAdjacentToPiece(state, t, from);
         if (adjacent && !inCheck(ns, opposite(p.color))) continue;

@@ -1,12 +1,30 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useGame } from "../GameContext";
 
 export function SettingsScreen() {
+  const nav = useNavigate();
   const { store, updateSetting } = useGame();
   const s = store.settings;
+
+  const goBack = () => {
+    if (window.history.length > 1) nav(-1);
+    else nav("/");
+  };
+
   return (
     <div className="screen">
-      <div className="topbar"><Link to="/">← Home</Link></div>
+      <div className="topbar">
+        <a
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            goBack();
+          }}
+        >
+          ← Back
+        </a>
+        <Link to="/">⌂ Home</Link>
+      </div>
       <h2>⚙ Settings</h2>
 
       <section>

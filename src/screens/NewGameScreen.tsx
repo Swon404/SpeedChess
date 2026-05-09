@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { PieceType } from "../engine/board";
 import { useGame } from "../GameContext";
@@ -16,11 +16,6 @@ export function NewGameScreen() {
   const [portalOpponentKind, setPortalOpponentKind] = useState<"two-player" | "bot">("bot");
   const [portalAdjacencyRule, setPortalAdjacencyRule] = useState<boolean>(false);
   const [portalMax, setPortalMax] = useState<1 | 2 | 3>(1);
-  const maxLevel = kind === "bot" ? 20 : 10;
-
-  useEffect(() => {
-    if (level > maxLevel) setLevel(maxLevel);
-  }, [level, maxLevel]);
 
   const ensureProfile = (name: string): string => {
     const trimmed = name.trim();
@@ -34,6 +29,8 @@ export function NewGameScreen() {
   };
 
   const start = () => {
+    updateSetting("timerSeconds", timer);
+
     // Ensure white profile exists and is active — stats are tied to this name
     const w = ensureProfile(whiteName || "Player 1");
     const wProf = store.profiles.find((p) => p.name.toLowerCase() === w.toLowerCase());
@@ -41,23 +38,21 @@ export function NewGameScreen() {
 
     if (kind === "two-player") {
       const b = ensureProfile(blackName || "Player 2");
-      newGame({ kind: "two-player" }, { w, b }, { timerSeconds: timer });
+      newGame({ kind: "two-player" }, { w, b });
     } else if (kind === "bot") {
-      newGame({ kind: "bot", level }, { w, b: `Bot Lv ${level}` }, { timerSeconds: timer });
+      newGame({ kind: "bot", level }, { w, b: `Bot Lv ${level}` });
     } else {
       // Portal Chess
       if (portalOpponentKind === "two-player") {
         const b = ensureProfile(blackName || "Player 2");
         newGame(
           { kind: "portal", opponent: "two-player", creator: portalCreator, adjacencyRule: portalAdjacencyRule, portalMax },
-          { w, b },
-          { timerSeconds: timer }
+          { w, b }
         );
       } else {
         newGame(
           { kind: "portal", opponent: { kind: "bot", level }, creator: portalCreator, adjacencyRule: portalAdjacencyRule, portalMax },
-          { w, b: `Bot Lv ${level}` },
-          { timerSeconds: timer }
+          { w, b: `Bot Lv ${level}` }
         );
       }
     }
@@ -69,7 +64,10 @@ export function NewGameScreen() {
 
   return (
     <div className="screen">
-      <div className="topbar"><Link to="/">← Home</Link></div>
+      <div className="topbar">
+        <Link to="/">← Home</Link>
+        <Link to="/settings">⚙ Settings</Link>
+      </div>
       <h2>New Game</h2>
 
       <section>
@@ -150,8 +148,8 @@ export function NewGameScreen() {
             </label>
             <p className="hint">
               When ticked, teleport targets cannot be adjacent to any other piece.
-              When unticked (default), you can teleport to any empty square
-              except the portal square itself.
+              When unticked (default), you can teleport anywhere empty &mdash; or stay
+              on the portal square (the portal remains active).
             </p>
           </section>
         </>
@@ -202,34 +200,11 @@ export function NewGameScreen() {
         </section>
       )}
 
-      {showBlackName && (
-        <section>
-          <h3>Board orientation (2-player)</h3>
-          <label>
-            <input
-              type="checkbox"
-              checked={store.settings.autoFlip}
-              onChange={(e) => updateSetting("autoFlip", e.target.checked)}
-            />
-            {" "}Auto-turn board after each move
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              checked={store.settings.rotateBlackPiecesFixedBoard}
-              onChange={(e) => updateSetting("rotateBlackPiecesFixedBoard", e.target.checked)}
-            />
-            {" "}Rotate black pieces 180° when board is fixed
-          </label>
-          <p className="hint">Turn off auto-turn to keep the board fixed from White's side. Optional: rotate black pieces for over-the-board seating.</p>
-        </section>
-      )}
-
       {showLevel && (
         <section>
           <h3>Bot difficulty</h3>
           <div className="difficulty">
-            {Array.from({ length: maxLevel }, (_, i) => i + 1).map((lv) => (
+            {Array.from({ length: 10 }, (_, i) => i + 1).map((lv) => (
               <button
                 key={lv}
                 className={lv === level ? "pill active" : "pill"}
@@ -238,9 +213,7 @@ export function NewGameScreen() {
             ))}
           </div>
           <p className="hint">
-            {kind === "bot"
-              ? "Level 1 is very easy (good for a new learner). Levels 5-20 use an external chess engine for stronger play."
-              : "Portal-bot mode uses the built-in engine and supports levels 1-10."}
+            Level 1 is very easy (good for a new learner). Levels 6+ use a stronger engine when available.
           </p>
         </section>
       )}

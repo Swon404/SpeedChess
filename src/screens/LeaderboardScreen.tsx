@@ -6,7 +6,10 @@ export function LeaderboardScreen() {
   const sorted = store.profiles.slice().sort((a, b) => b.stats.rating - a.stats.rating);
   return (
     <div className="screen">
-      <div className="topbar"><Link to="/">← Home</Link></div>
+      <div className="topbar">
+        <Link to="/">← Home</Link>
+        <Link to="/settings">⚙ Settings</Link>
+      </div>
       <h2>🏆 Leaderboard</h2>
       {sorted.length === 0 ? (
         <p>No players yet. <Link to="/profiles">Add one</Link>.</p>

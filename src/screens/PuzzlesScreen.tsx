@@ -182,6 +182,7 @@ export function PuzzlesScreen() {
       <div className="topbar">
         <Link to="/">← Home</Link>
         <span className="muted">Solved: {totalSolved} / {totalCount}</span>
+        <Link to="/settings">⚙ Settings</Link>
       </div>
       <h2>🧩 Puzzles</h2>
 

@@ -62,6 +62,7 @@ export function GameScreen() {
       <div className="topbar">
         <Link to="/">← Home</Link>
         <Link to="/new">New game</Link>
+        <Link to="/settings">⚙ Settings</Link>
       </div>
       <Clock />
       <LookPicker />

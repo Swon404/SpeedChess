@@ -8,7 +8,10 @@ export function ProfileScreen() {
 
   return (
     <div className="screen">
-      <div className="topbar"><Link to="/">← Home</Link></div>
+      <div className="topbar">
+        <Link to="/">← Home</Link>
+        <Link to="/settings">⚙ Settings</Link>
+      </div>
       <h2>Players</h2>
       <div className="new-player">
         <input
