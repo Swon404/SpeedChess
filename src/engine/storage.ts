@@ -39,6 +39,9 @@ export interface Settings {
   autoFlip: boolean;
   showThreats: boolean;
   explodeOnCapture: boolean;
+  portalCreatorDefault: PieceType;
+  portalOpponentDefault: "two-player" | "bot";
+  portalMaxDefault: 1 | 2 | 3;
 }
 
 export interface SavedGame {
@@ -67,12 +70,30 @@ const DEFAULT_SETTINGS: Settings = {
   haptics: true,
   autoFlip: true,
   showThreats: false,
-  explodeOnCapture: false
+  explodeOnCapture: false,
+  portalCreatorDefault: "N",
+  portalOpponentDefault: "bot",
+  portalMaxDefault: 2
 };
 
 function normalizePieceSet(value: unknown): PieceSet {
   if (value === "classic" || value === "modern" || value === "neon") return value;
   return "neon";
+}
+
+function normalizePortalCreator(value: unknown): PieceType {
+  if (value === "Q" || value === "R" || value === "B" || value === "N" || value === "K") return value;
+  return "N";
+}
+
+function normalizePortalOpponent(value: unknown): "two-player" | "bot" {
+  if (value === "two-player" || value === "bot") return value;
+  return "bot";
+}
+
+function normalizePortalMax(value: unknown): 1 | 2 | 3 {
+  if (value === 1 || value === 2 || value === 3) return value;
+  return 2;
 }
 
 function emptyStats(): ProfileStats {
@@ -92,7 +113,10 @@ export function load(): Store {
     parsed.settings = {
       ...DEFAULT_SETTINGS,
       ...rawSettings,
-      pieceSet: normalizePieceSet(rawSettings?.pieceSet)
+      pieceSet: normalizePieceSet(rawSettings?.pieceSet),
+      portalCreatorDefault: normalizePortalCreator(rawSettings?.portalCreatorDefault),
+      portalOpponentDefault: normalizePortalOpponent(rawSettings?.portalOpponentDefault),
+      portalMaxDefault: normalizePortalMax(rawSettings?.portalMaxDefault)
     };
     parsed.savedGames = parsed.savedGames ?? {};
     return parsed;

@@ -134,6 +134,36 @@ section h3 { margin-bottom: 8px; }
 section label { display: block; margin: 6px 0; }
 
 .difficulty { display: flex; flex-wrap: wrap; gap: 6px; }
+.bot-level-groups {
+  display: grid;
+  gap: 12px;
+}
+.bot-level-group {
+  display: grid;
+  gap: 6px;
+}
+.bot-level-label {
+  color: #cbd5e1;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+.bot-level-grid {
+  display: grid;
+  gap: 6px;
+}
+.bot-level-grid .pill {
+  min-width: 0;
+  width: 100%;
+  text-align: center;
+  padding: 6px 0;
+  font-size: 0.92rem;
+}
+.learn-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.challenge-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
 .pill {
   padding: 6px 14px;
   border-radius: 999px;
@@ -567,6 +597,11 @@ section label { display: block; margin: 6px 0; }
 .controls .buttons { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 
 @media (max-width: 640px) {
+  .learn-grid,
+  .challenge-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
   .controls {
     flex-direction: column;
     align-items: stretch;
@@ -591,6 +626,13 @@ section label { display: block; margin: 6px 0; }
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+}
+
+@media (max-width: 420px) {
+  .learn-grid,
+  .challenge-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 

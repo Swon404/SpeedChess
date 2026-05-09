@@ -21,7 +21,7 @@ import {
 type Mode =
   | { kind: "two-player" }
   | { kind: "bot"; level: number }
-  | { kind: "portal"; opponent: "two-player" | { kind: "bot"; level: number }; creator: PieceType; adjacencyRule?: boolean; portalMax?: number };
+  | { kind: "portal"; opponent: "two-player" | { kind: "bot"; level: number }; creator: PieceType; portalMax?: number };
 export interface Players { w: string; b: string; }
 
 interface NewGameOptions {
@@ -29,11 +29,11 @@ interface NewGameOptions {
 }
 
 /** Build the initial state for Portal Chess (creator-type portals). */
-function portalInitialState(creator: PieceType, adjacencyRule = false, portalMax = 1): GameState {
+function portalInitialState(creator: PieceType, portalMax = 2): GameState {
   const s = initialState();
   s.portals = { w: [], b: [], max: portalMax };
   s.portalCreators = { w: creator, b: creator };
-  s.portalAdjacencyRule = adjacencyRule;
+  s.portalAdjacencyRule = false;
   return s;
 }
 
@@ -181,13 +181,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
       } else if (lastMove?.isPortalEntry) {
         playSound("teleport");
       } else if (lastMove?.captured) {
-        playSound("capture");
+        if (!store.settings.explodeOnCapture) playSound("capture");
       } else {
         playSound("move");
       }
     }
     soundedLenRef.current = state.history.length;
-  }, [state, result, mode, store.settings.sound]);
+  }, [state, result, mode, store.settings.sound, store.settings.explodeOnCapture]);
 
   // Persist active session so a refresh / PWA relaunch resumes the game.
   useEffect(() => {
@@ -389,7 +389,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
           ? `Bot Lv ${m.opponent.level}`
           : "Player 2";
     setPlayers({ w: p?.w ?? defaultW, b: p?.b ?? defaultB });
-    const fresh = m.kind === "portal" ? portalInitialState(m.creator, m.adjacencyRule === true, m.portalMax ?? 1) : initialState();
+    const fresh = m.kind === "portal" ? portalInitialState(m.creator, m.portalMax ?? 2) : initialState();
     dispatch({ type: "new", initial: fresh });
     setSelected(null);
     setPaused(false);

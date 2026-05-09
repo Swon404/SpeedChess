@@ -102,14 +102,14 @@ describe("Portal Chess: teleport entry", () => {
     expect(targets.some((t) => sqEq(t, parseSquare("e6")))).toBe(true);
   });
 
-  it("Adjacency rule is bypassed when the teleport delivers check", () => {
+  it("Teleport into an attacked square is illegal even if it would give check", () => {
     const s = asPortal(parseFEN("4k3/4p3/8/8/8/8/8/K7 w - - 0 1"));
     s.board[3][6] = { type: "N", color: "w" }; // Ng4 on its own portal
     s.portals = { w: [parseSquare("g4")], b: [], max: 1 };
     s.portalAdjacencyRule = true;
     const moves = legalMovesFrom(s, parseSquare("g4"))
       .filter((m) => m.isPortalEntry && sqEq(m.to, parseSquare("f6")));
-    expect(moves.length).toBe(1);
+    expect(moves.length).toBe(0);
   });
 
   it("With adjacency rule OFF (default), targets next to other pieces are allowed", () => {
@@ -120,19 +120,16 @@ describe("Portal Chess: teleport entry", () => {
     expect(targets.some((t) => sqEq(t, parseSquare("c2")))).toBe(true);
   });
 
-  it("Teleport that leaves own king in check is illegal", () => {
+  it("Teleport options are empty when every destination is attacked or exposes king", () => {
     // Black rook a8 pins the white rook against the king on a1.
     const s = asPortal(parseFEN("r6k/8/8/8/8/8/8/K7 w - - 0 1"));
     s.board[1][0] = { type: "R", color: "w" }; // Ra2 on its own portal
     s.portals = { w: [parseSquare("a2")], b: [], max: 1 };
     const moves = legalMovesFrom(s, parseSquare("a2")).filter((m) => m.isPortalEntry);
-    expect(moves.length).toBeGreaterThan(0);
-    for (const m of moves) {
-      expect(m.to.file).toBe(0); // must stay on the a-file
-    }
+    expect(moves.length).toBe(0);
   });
 
-  it("Cannot teleport into an attacked square unless that square is also a legal normal move", () => {
+  it("Cannot teleport into an attacked square", () => {
     // Black rook on d8 attacks d-file squares (including d3/d4).
     // White knight on f3 is on its own portal.
     const s = asPortal(parseFEN("3r3k/8/8/8/8/8/8/K7 w - - 0 1"));
@@ -141,11 +138,9 @@ describe("Portal Chess: teleport entry", () => {
 
     const tele = legalMovesFrom(s, parseSquare("f3")).filter((m) => m.isPortalEntry);
 
-    // d3 is attacked by the rook but is NOT a legal normal knight destination.
+    // d3 and d4 are attacked by the rook, so both are illegal teleport targets.
     expect(tele.some((m) => sqEq(m.to, parseSquare("d3")))).toBe(false);
-
-    // d4 is attacked too, but IS a legal normal knight destination from f3.
-    expect(tele.some((m) => sqEq(m.to, parseSquare("d4")))).toBe(true);
+    expect(tele.some((m) => sqEq(m.to, parseSquare("d4")))).toBe(false);
   });
 });
 

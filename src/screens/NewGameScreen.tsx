@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { PieceType } from "../engine/board";
 import { useGame } from "../GameContext";
@@ -12,10 +12,14 @@ export function NewGameScreen() {
   const [whiteName, setWhiteName] = useState<string>(activeProfile?.name ?? "");
   const [blackName, setBlackName] = useState<string>("");
   // Portal Chess sub-options
-  const [portalCreator, setPortalCreator] = useState<PieceType>("N");
-  const [portalOpponentKind, setPortalOpponentKind] = useState<"two-player" | "bot">("bot");
-  const [portalAdjacencyRule, setPortalAdjacencyRule] = useState<boolean>(false);
-  const [portalMax, setPortalMax] = useState<1 | 2 | 3>(1);
+  const [portalCreator, setPortalCreator] = useState<PieceType>(store.settings.portalCreatorDefault);
+  const [portalOpponentKind, setPortalOpponentKind] = useState<"two-player" | "bot">(store.settings.portalOpponentDefault);
+  const [portalMax, setPortalMax] = useState<1 | 2 | 3>(store.settings.portalMaxDefault);
+  const maxLevel = kind === "bot" ? 20 : 10;
+
+  useEffect(() => {
+    if (level > maxLevel) setLevel(maxLevel);
+  }, [level, maxLevel]);
 
   const ensureProfile = (name: string): string => {
     const trimmed = name.trim();
@@ -30,6 +34,9 @@ export function NewGameScreen() {
 
   const start = () => {
     updateSetting("timerSeconds", timer);
+    updateSetting("portalCreatorDefault", portalCreator);
+    updateSetting("portalOpponentDefault", portalOpponentKind);
+    updateSetting("portalMaxDefault", portalMax);
 
     // Ensure white profile exists and is active — stats are tied to this name
     const w = ensureProfile(whiteName || "Player 1");
@@ -46,12 +53,12 @@ export function NewGameScreen() {
       if (portalOpponentKind === "two-player") {
         const b = ensureProfile(blackName || "Player 2");
         newGame(
-          { kind: "portal", opponent: "two-player", creator: portalCreator, adjacencyRule: portalAdjacencyRule, portalMax },
+          { kind: "portal", opponent: "two-player", creator: portalCreator, portalMax },
           { w, b }
         );
       } else {
         newGame(
-          { kind: "portal", opponent: { kind: "bot", level }, creator: portalCreator, adjacencyRule: portalAdjacencyRule, portalMax },
+          { kind: "portal", opponent: { kind: "bot", level }, creator: portalCreator, portalMax },
           { w, b: `Bot Lv ${level}` }
         );
       }
@@ -138,20 +145,6 @@ export function NewGameScreen() {
             </p>
           </section>
 
-          <section>
-            <h3>House rules</h3>
-            <label>
-              <input type="checkbox"
-                checked={portalAdjacencyRule}
-                onChange={(e) => setPortalAdjacencyRule(e.target.checked)} />
-              {" "}Prevent teleport next to any piece
-            </label>
-            <p className="hint">
-              When ticked, teleport targets cannot be adjacent to any other piece.
-              When unticked (default), you can teleport anywhere empty &mdash; or stay
-              on the portal square (the portal remains active).
-            </p>
-          </section>
         </>
       )}
 
@@ -203,17 +196,48 @@ export function NewGameScreen() {
       {showLevel && (
         <section>
           <h3>Bot difficulty</h3>
-          <div className="difficulty">
-            {Array.from({ length: 10 }, (_, i) => i + 1).map((lv) => (
-              <button
-                key={lv}
-                className={lv === level ? "pill active" : "pill"}
-                onClick={() => setLevel(lv)}
-              >{lv}</button>
-            ))}
-          </div>
+          {kind === "bot" ? (
+            <div className="bot-level-groups">
+              <div className="bot-level-group">
+                <div className="bot-level-label">Learn</div>
+                <div className="bot-level-grid learn-grid">
+                  {Array.from({ length: 5 }, (_, i) => i + 1).map((lv) => (
+                    <button
+                      key={lv}
+                      className={lv === level ? "pill active" : "pill"}
+                      onClick={() => setLevel(lv)}
+                    >{lv}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="bot-level-group">
+                <div className="bot-level-label">Challenge</div>
+                <div className="bot-level-grid challenge-grid">
+                  {Array.from({ length: 15 }, (_, i) => i + 6).map((lv) => (
+                    <button
+                      key={lv}
+                      className={lv === level ? "pill active" : "pill"}
+                      onClick={() => setLevel(lv)}
+                    >{lv}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="difficulty">
+              {Array.from({ length: maxLevel }, (_, i) => i + 1).map((lv) => (
+                <button
+                  key={lv}
+                  className={lv === level ? "pill active" : "pill"}
+                  onClick={() => setLevel(lv)}
+                >{lv}</button>
+              ))}
+            </div>
+          )}
           <p className="hint">
-            Level 1 is very easy (good for a new learner). Levels 6+ use a stronger engine when available.
+            {kind === "bot"
+              ? "Learn levels 1-5 use the local bot and are tuned for practice. Challenge levels 6-20 use Stockfish when online, with local fallback offline."
+              : "Portal-bot mode uses the in-house engine and supports levels 1-10."}
           </p>
         </section>
       )}

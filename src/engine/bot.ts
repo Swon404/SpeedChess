@@ -70,8 +70,8 @@ interface BotOptions {
 
 /**
  * Choose a move for the bot at a given difficulty (1-20).
- * Levels 1-4 use the built-in minimax with increasing depth and decreasing randomness.
- * Levels 5-20 can delegate to an external Stockfish API when enabled; if unavailable,
+ * Levels 1-5 use the built-in minimax with increasing depth and decreasing randomness.
+ * Levels 6-20 can delegate to an external Stockfish API when enabled; if unavailable,
  * fall back to local minimax.
  */
 export async function chooseBotMove(state: GameState, level: number, opts?: BotOptions): Promise<Move | null> {
@@ -81,7 +81,7 @@ export async function chooseBotMove(state: GameState, level: number, opts?: BotO
   const normalizedLevel = Math.max(1, Math.min(20, Math.round(level)));
   const canUseExternal = opts?.allowExternal !== false && !state.portals;
 
-  if (canUseExternal && normalizedLevel >= 5) {
+  if (canUseExternal && normalizedLevel >= 6) {
     try {
       const { stockfishBestMove } = await import("./bot/stockfish");
       const best = await stockfishBestMove(state, normalizedLevel);
@@ -97,7 +97,8 @@ export async function chooseBotMove(state: GameState, level: number, opts?: BotO
   // Level 2: ~50% random, depth-1 search the rest.
   // Level 3: depth-2, occasional blunder.
   // Level 4: depth-2 clean.
-  // Level 5+: deterministic minimax fallback if external engine is unavailable.
+  // Level 5: strongest local-only learn level.
+  // Level 6+: deterministic minimax fallback if external engine is unavailable.
   const blunderChanceByLevel: Record<number, number> = { 1: 0.8, 2: 0.5, 3: 0.15, 4: 0.03 };
   const blunderChance = blunderChanceByLevel[normalizedLevel] ?? 0;
   const depth = normalizedLevel <= 2 ? 1 : normalizedLevel <= 4 ? 2 : normalizedLevel <= 8 ? 3 : 4;

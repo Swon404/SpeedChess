@@ -417,13 +417,6 @@ export function legalMovesFrom(state: GameState, from: Square): Move[] {
     if (!inCheck(ns, p.color)) out.push(m);
   }
 
-  // For portal safety rule: track legal non-portal destinations from this
-  // square. Teleporting into an attacked square is only allowed when this
-  // piece could already move to that destination without using a portal.
-  const normalLegalTargets = new Set(
-    out.map((m) => `${m.to.file},${m.to.rank}`)
-  );
-
   // Portal Chess (deferred warp): if this piece is currently sitting on its
   // own side's portal, it may also teleport to any empty square. Pawns and
   // the creator piece can't use portals.
@@ -446,9 +439,7 @@ export function legalMovesFrom(state: GameState, from: Square): Move[] {
       };
       const ns = makeMove(state, tpMove);
       if (inCheck(ns, p.color)) continue;
-      const attackedAfterTeleport = isSquareAttacked(ns, t, opposite(p.color));
-      const legalNormally = normalLegalTargets.has(`${t.file},${t.rank}`);
-      if (attackedAfterTeleport && !legalNormally) continue;
+      if (isSquareAttacked(ns, t, opposite(p.color))) continue;
       if (adjacency) {
         const adjacent = teleportIsAdjacentToPiece(state, t, from);
         if (adjacent && !inCheck(ns, opposite(p.color))) continue;

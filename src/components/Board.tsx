@@ -1,6 +1,7 @@
 import { CSSProperties, useLayoutEffect, useState } from "react";
 import { Move, Piece as PieceT, Square, squareName } from "../engine/board";
 import { findKing, inCheck } from "../engine/rules";
+import { playSound } from "../engine/sound";
 import { useGame } from "../GameContext";
 import { Piece } from "./Piece";
 
@@ -104,6 +105,7 @@ export function Board({ flipped = false }: Props) {
       setIsAnimatingLastMove(false);
       if (current.captured && store.settings.explodeOnCapture) {
         setShowCaptureBoom(true);
+        playSound("boom", store.settings.sound);
         const boomId = window.setTimeout(() => setShowCaptureBoom(false), 620);
         return () => window.clearTimeout(boomId);
       }
@@ -116,6 +118,7 @@ export function Board({ flipped = false }: Props) {
       setIsAnimatingLastMove(false);
       if (current.captured && store.settings.explodeOnCapture) {
         setShowCaptureBoom(true);
+        playSound("boom", store.settings.sound);
         boomId = window.setTimeout(() => setShowCaptureBoom(false), 620);
       }
     }, durationMs);

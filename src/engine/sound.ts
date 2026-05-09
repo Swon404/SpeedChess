@@ -1,7 +1,7 @@
 // Lightweight Web Audio synth for UI sounds — no external asset files.
 // Each sound is a tiny oscillator burst so the PWA stays offline-friendly.
 
-type SoundName = "move" | "capture" | "check" | "win" | "draw" | "loss" | "teleport";
+type SoundName = "move" | "capture" | "boom" | "check" | "win" | "draw" | "loss" | "teleport";
 
 let ctx: AudioContext | null = null;
 function getCtx(): AudioContext | null {
@@ -36,6 +36,11 @@ export function playSound(name: SoundName, enabled = true) {
   try {
     if (name === "move")    { tone(440, 70, "triangle", 0.12); }
     else if (name === "capture") { tone(180, 90, "square",  0.14); tone(110, 120, "sawtooth", 0.08, 30); }
+    else if (name === "boom") {
+      tone(82, 220, "sawtooth", 0.2);
+      tone(64, 260, "square", 0.14, 20);
+      tone(220, 120, "triangle", 0.07, 45);
+    }
     else if (name === "check")   { tone(880, 110, "sine",   0.15); tone(1175, 120, "sine", 0.13, 90); }
     else if (name === "win")     { tone(523, 120, "triangle"); tone(659, 120, "triangle", 0.15, 120); tone(784, 180, "triangle", 0.18, 240); }
     else if (name === "loss")    { tone(392, 140, "sawtooth", 0.14); tone(311, 220, "sawtooth", 0.14, 140); }
