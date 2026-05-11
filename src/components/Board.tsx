@@ -1,6 +1,6 @@
 import { CSSProperties, useLayoutEffect, useState } from "react";
 import { Move, Piece as PieceT, Square, squareName } from "../engine/board";
-import { findKing, inCheck } from "../engine/rules";
+import { findKing, inCheck, isSquareAttacked } from "../engine/rules";
 import { playSound } from "../engine/sound";
 import { useGame } from "../GameContext";
 import { Piece } from "./Piece";
@@ -149,6 +149,10 @@ export function Board({ flipped = false }: Props) {
               const isHintTo = hint && hint.to.file === f && hint.to.rank === r;
               const isPortalW = wPortals.some((p) => p.file === f && p.rank === r);
               const isPortalB = bPortals.some((p) => p.file === f && p.rank === r);
+              const isThreatened =
+                !!piece &&
+                store.settings.showThreats &&
+                isSquareAttacked(state, sq, piece.color === "w" ? "b" : "w");
               const slideEnd = lastMove?.portalTo ?? lastMove?.to;
               const isSlideDestination =
                 !!slideEnd && slideEnd.file === f && slideEnd.rank === r;
@@ -207,6 +211,7 @@ export function Board({ flipped = false }: Props) {
                       aria-hidden="true"
                     />
                   )}
+                  {isThreatened && <span className="threat-marker" aria-hidden="true">!</span>}
                   {showCapturedGhost && lastMove?.captured && (
                     <span className="captured-ghost" aria-hidden="true">
                       <Piece

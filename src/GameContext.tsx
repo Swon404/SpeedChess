@@ -87,6 +87,15 @@ function botLevelOf(m: Mode): number | null {
   return null;
 }
 
+function triggerHaptics(enabled: boolean, pattern: number | number[]) {
+  if (!enabled || typeof navigator === "undefined" || typeof navigator.vibrate !== "function") return;
+  try {
+    navigator.vibrate(pattern);
+  } catch {
+    // Ignore unsupported or blocked vibration requests.
+  }
+}
+
 const Ctx = createContext<GameCtx | null>(null);
 
 export function useGame(): GameCtx {
@@ -188,6 +197,32 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
     soundedLenRef.current = state.history.length;
   }, [state, result, mode, store.settings.sound, store.settings.explodeOnCapture]);
+
+  const hapticsLenRef = useRef<number>(state.history.length);
+  useEffect(() => {
+    if (!store.settings.haptics) {
+      hapticsLenRef.current = state.history.length;
+      return;
+    }
+    if (state.history.length > hapticsLenRef.current) {
+      const lastMove = state.history[state.history.length - 1];
+      const isCheck = result.kind === "ongoing" && isInCheckNow(state);
+      if (result.kind === "checkmate") {
+        triggerHaptics(true, [60, 40, 90]);
+      } else if (result.kind !== "ongoing") {
+        triggerHaptics(true, [45, 30, 45]);
+      } else if (isCheck) {
+        triggerHaptics(true, [35, 25, 55]);
+      } else if (lastMove?.captured) {
+        triggerHaptics(true, 45);
+      } else if (lastMove?.isPortalEntry) {
+        triggerHaptics(true, [18, 20, 18]);
+      } else {
+        triggerHaptics(true, 20);
+      }
+    }
+    hapticsLenRef.current = state.history.length;
+  }, [state, result, store.settings.haptics]);
 
   // Persist active session so a refresh / PWA relaunch resumes the game.
   useEffect(() => {
@@ -372,6 +407,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [mode]);
 
   const newGame = useCallback((m: Mode, p?: Partial<Players>, opts?: NewGameOptions) => {
+    if (
+      result.kind === "ongoing" &&
+      state.history.length > 0 &&
+      typeof window !== "undefined" &&
+      !window.confirm("Start a new game? Your current game will be replaced.")
+    ) {
+      return;
+    }
     clearActiveSession();
     noTimerRef.current = false;
     if (opts?.timerSeconds !== undefined && opts.timerSeconds !== storeRef.current.settings.timerSeconds) {
@@ -400,7 +443,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     // instead of the stale closure-captured one.
     const t = opts?.timerSeconds ?? storeRef.current.settings.timerSeconds;
     setTimeLeft(t > 0 ? t : Infinity);
-  }, [activeProfile]);
+  }, [activeProfile, result.kind, state.history.length]);
 
   const forfeit = useCallback(() => dispatch({ type: "forfeit" }), []);
 
