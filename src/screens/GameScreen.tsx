@@ -4,7 +4,6 @@ import { Board } from "../components/Board";
 import { Clock } from "../components/Clock";
 import { Controls } from "../components/Controls";
 import { GameOverModal } from "../components/GameOverModal";
-import { LookPicker } from "../components/LookPicker";
 import { MoveList } from "../components/MoveList";
 import { useGame } from "../GameContext";
 
@@ -20,11 +19,17 @@ function slideDurationMs(speed: "normal" | "slow" | "very-slow", isMobile: boole
 }
 
 export function GameScreen() {
-  const { mode, state, store, paused, togglePause } = useGame();
+  const { mode, state, store, paused, togglePause, moveFeedback } = useGame();
   const shouldAutoFlip = mode.kind === "two-player" && store.settings.autoFlip;
   const targetFlipped = shouldAutoFlip && state.turn === "b";
   const [flipped, setFlipped] = useState(targetFlipped);
   const prevHistLenRef = useRef(state.history.length);
+  const coachLabel = mode.kind === "portal" ? "Portal coach" : "Stockfish coach";
+  const statusDetail = moveFeedback
+    ? `${moveFeedback.playerName}: ${moveFeedback.label} · ${moveFeedback.score}/100`
+    : mode.kind === "portal"
+      ? "Portal Chess uses the in-house coach because Stockfish cannot read portals."
+      : "Normal chess uses Stockfish to score moves and help you learn.";
 
   useEffect(() => {
     const prevHistLen = prevHistLenRef.current;
@@ -65,7 +70,10 @@ export function GameScreen() {
         <Link to="/settings">⚙ Settings</Link>
       </div>
       <Clock />
-      <LookPicker />
+      <div className="game-status-line" role="status" aria-live="polite">
+        <strong>{coachLabel}</strong>
+        <span>{statusDetail}</span>
+      </div>
       <div className="board-wrap">
         <Board flipped={flipped} />
         {paused && (

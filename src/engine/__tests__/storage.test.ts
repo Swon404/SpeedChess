@@ -123,21 +123,31 @@ describe("storage performance history", () => {
       score: 28,
       moveGrades: [1, 0, 2]
     });
+    recordResult(store, "p1", { kind: "bot", level: 12 }, "win", {
+      playedAt: now - 2 * 24 * 60 * 60 * 1000,
+      stars: 3,
+      score: 70,
+      moveGrades: [3, 3, 4]
+    });
 
     const stats = store.profiles[0].stats;
     const all = getPerformanceSummary(stats, "all", now);
     const human = getPerformanceSummary(stats, "human", now);
+    const bot = getPerformanceSummary(stats, "bot", now);
 
-    expect(stats.totalStars).toBe(8);
-    expect(all.overall.games).toBe(3);
-    expect(all.overall.rating).toBe(62);
-    expect(all.last7Days.games).toBe(1);
-    expect(all.last7Days.rating).toBe(96);
-    expect(all.last30Days.games).toBe(2);
-    expect(all.last30Days.stars).toBe(7);
+    expect(stats.totalStars).toBe(11);
+    expect(all.overall.games).toBe(4);
+    expect(all.overall.rating).toBe(63);
+    expect(all.last7Days.games).toBe(2);
+    expect(all.last7Days.rating).toBe(80);
+    expect(all.last30Days.games).toBe(3);
+    expect(all.last30Days.rating).toBe(74);
+    expect(all.last30Days.stars).toBe(10);
     expect(human.overall.games).toBe(2);
     expect(human.last7Days.games).toBe(0);
     expect(human.last30Days.games).toBe(1);
     expect(human.last30Days.rating).toBe(61);
+    expect(bot.overall.games).toBe(2);
+    expect(bot.overall.rating).toBe(80);
   });
 });

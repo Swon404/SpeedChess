@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { initialState, type Move } from "../board";
+import { initialState, parseFEN, type Move } from "../board";
 import { legalMovesFrom } from "../rules";
 import { describeMoveGrade, evaluateMoveFeedback, summarizeMoveGrades } from "../performance";
 
@@ -35,10 +35,34 @@ describe("performance helpers", () => {
   it("does not label every opening move as grandmaster", () => {
     const state = initialState();
     const kingPawn = evaluateMoveFeedback(state, findMove(4, 1, 4, 3));
+    const knightDevelop = evaluateMoveFeedback(state, findMove(6, 0, 5, 2));
     const fPawn = evaluateMoveFeedback(state, findMove(5, 1, 5, 2));
 
     expect(kingPawn.grade).toBeGreaterThanOrEqual(fPawn.grade);
+    expect(knightDevelop.grade).toBeLessThanOrEqual(2);
     expect(fPawn.grade).toBeLessThan(5);
     expect(kingPawn.loss).toBeLessThanOrEqual(fPawn.loss);
+  });
+
+  it("downgrades moves that hang a knight to the queen", () => {
+    const state = parseFEN("4k3/8/8/7q/8/8/8/4K1N1 w - - 0 1");
+    const move = legalMovesFrom(state, { file: 6, rank: 0 }).find((candidate) =>
+      candidate.to.file === 5 && candidate.to.rank === 2
+    );
+    if (!move) throw new Error("Expected Nf3 to be legal");
+
+    const feedback = evaluateMoveFeedback(state, move);
+    expect(feedback.grade).toBeLessThanOrEqual(1);
+  });
+
+  it("does not call an even knight trade wobbly", () => {
+    const state = parseFEN("4k3/8/8/8/3n4/5N2/8/4K3 w - - 0 1");
+    const move = legalMovesFrom(state, { file: 5, rank: 2 }).find((candidate) =>
+      candidate.to.file === 3 && candidate.to.rank === 3
+    );
+    if (!move) throw new Error("Expected Nxd4 to be legal");
+
+    const feedback = evaluateMoveFeedback(state, move);
+    expect(feedback.grade).toBeGreaterThanOrEqual(2);
   });
 });

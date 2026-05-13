@@ -1,12 +1,16 @@
-import { CSSProperties, useLayoutEffect, useState } from "react";
+import { CSSProperties, useLayoutEffect, useMemo, useState } from "react";
 import { Move, Piece as PieceT, Square, squareName } from "../engine/board";
-import { findKing, inCheck, isSquareAttacked } from "../engine/rules";
+import { allLegalMoves, findKing, inCheck } from "../engine/rules";
 import { playSound } from "../engine/sound";
 import { useGame } from "../GameContext";
 import { Piece } from "./Piece";
 
 function isLegalTarget(legal: Move[], sq: Square): Move | undefined {
   return legal.find((m) => m.to.file === sq.file && m.to.rank === sq.rank);
+}
+
+function squareKey(sq: Square): string {
+  return `${sq.file},${sq.rank}`;
 }
 
 function slideDurationMs(speed: "normal" | "slow" | "very-slow", isMobile: boolean): number {
@@ -88,6 +92,19 @@ export function Board({ flipped = false }: Props) {
     mode.kind === "two-player" &&
     !store.settings.autoFlip &&
     store.settings.rotateBlackPiecesFixedBoard;
+  const legalCaptureTargets = useMemo(() => {
+    const whiteTargets = new Set(
+      allLegalMoves({ ...state, turn: "w" })
+        .filter((move) => Boolean(move.captured))
+        .map((move) => squareKey(move.to))
+    );
+    const blackTargets = new Set(
+      allLegalMoves({ ...state, turn: "b" })
+        .filter((move) => Boolean(move.captured))
+        .map((move) => squareKey(move.to))
+    );
+    return { w: whiteTargets, b: blackTargets };
+  }, [state]);
 
   useLayoutEffect(() => {
     const current = state.history[state.history.length - 1];
@@ -154,7 +171,7 @@ export function Board({ flipped = false }: Props) {
               const isThreatened =
                 !!piece &&
                 store.settings.showThreats &&
-                isSquareAttacked(state, sq, piece.color === "w" ? "b" : "w");
+                legalCaptureTargets[piece.color === "w" ? "b" : "w"].has(squareKey(sq));
               const slideEnd = lastMove?.portalTo ?? lastMove?.to;
               const isSlideDestination =
                 !!slideEnd && slideEnd.file === f && slideEnd.rank === r;

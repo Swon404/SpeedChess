@@ -1,6 +1,7 @@
 import { opposite, type Color, type GameState, type Move } from "./board";
+import { stockfishAnalyzePosition, stockfishMoveFromUci, type StockfishAnalysis } from "./bot/stockfish";
 import { materialScore } from "./bot";
-import { allLegalMoves, gameResult, inCheck, makeMove } from "./rules";
+import { allLegalMoves, gameResult, inCheck, isSquareAttacked, makeMove } from "./rules";
 
 export type MoveGrade = 0 | 1 | 2 | 3 | 4 | 5;
 
@@ -30,6 +31,20 @@ const MOVE_FEEDBACK: Record<MoveGrade, Omit<MoveFeedback, "score" | "loss">> = {
   4: { grade: 4, label: "Sharp", title: "Sharp move", emoji: "🦅", sound: null },
   5: { grade: 5, label: "Grandmaster", title: "Grandmaster move", emoji: "🦁", sound: "grandmaster" }
 };
+
+const PIECE_DANGER_VALUES: Record<string, number> = {
+  P: 100,
+  N: 320,
+  B: 330,
+  R: 500,
+  Q: 900,
+  K: 0
+};
+
+function pieceValue(piece: string | undefined): number {
+  if (!piece) return 0;
+  return PIECE_DANGER_VALUES[piece] ?? 0;
+}
 
 function clampGrade(value: number): MoveGrade {
   return Math.max(0, Math.min(5, Math.round(value))) as MoveGrade;
@@ -93,6 +108,26 @@ function tacticalThreatBonus(state: GameState, color: Color): number {
   return ownMoves.length * 2 - enemyMoves.length;
 }
 
+function hangingPiecePenalty(state: GameState, color: Color): number {
+  const enemy = opposite(color);
+  let penalty = 0;
+
+  for (let rank = 0; rank < 8; rank++) {
+    for (let file = 0; file < 8; file++) {
+      const piece = state.board[rank][file];
+      if (!piece || piece.color !== color || piece.type === "K") continue;
+      const square = { file, rank };
+      const attacked = isSquareAttacked(state, square, enemy);
+      if (!attacked) continue;
+      const defended = isSquareAttacked(state, square, color);
+      const value = PIECE_DANGER_VALUES[piece.type] ?? 0;
+      penalty += defended ? Math.round(value * 0.28) : Math.round(value * 0.75);
+    }
+  }
+
+  return penalty;
+}
+
 function evaluatePosition(state: GameState, color: Color): number {
   const result = gameResult(state);
   if (result.kind === "checkmate") {
@@ -104,6 +139,7 @@ function evaluatePosition(state: GameState, color: Color): number {
   score += pieceDevelopmentBonus(state, color);
   score += centerControlBonus(state, color);
   score += tacticalThreatBonus(state, color);
+  score -= hangingPiecePenalty(state, color);
   if (inCheck(state, opposite(color))) score += 40;
   if (inCheck(state, color)) score -= 55;
 
@@ -115,11 +151,11 @@ function evaluatePosition(state: GameState, color: Color): number {
 }
 
 function gradeFromLoss(loss: number): MoveGrade {
-  if (loss <= 15) return 5;
-  if (loss <= 60) return 4;
-  if (loss <= 140) return 3;
-  if (loss <= 260) return 2;
-  if (loss <= 450) return 1;
+  if (loss <= 2) return 5;
+  if (loss <= 6) return 4;
+  if (loss <= 10) return 3;
+  if (loss <= 35) return 2;
+  if (loss <= 180) return 1;
   return 0;
 }
 
@@ -160,11 +196,87 @@ export function evaluateMoveFeedback(state: GameState, move: Move): MoveFeedback
     if (!Number.isFinite(bestScore)) bestScore = moveScore;
   }
 
-  const loss = Math.max(0, bestScore - moveScore);
+  const rawLoss = Math.max(0, bestScore - moveScore);
+  const loss = Math.max(0, rawLoss - exchangeCredit(state, move));
+  return feedbackFromLoss(loss);
+}
+
+export async function evaluateMoveFeedbackWithEngine(state: GameState, move: Move): Promise<MoveFeedback> {
+  if (state.portals) return evaluateMoveFeedback(state, move);
+
+  const analysis = await stockfishAnalyzePosition(state);
+  const bestMove = stockfishMoveFromUci(state, analysis?.bestmoveUci ?? null);
+  if (!analysis || !bestMove) return evaluateMoveFeedback(state, move);
+  if (movesMatch(bestMove, move)) return feedbackFromLoss(0);
+
+  const color = state.turn;
+  const [bestAnalysis, playedAnalysis] = await Promise.all([
+    stockfishAnalyzePosition(makeMove(state, bestMove)),
+    stockfishAnalyzePosition(makeMove(state, move))
+  ]);
+
+  const bestScore = stockfishScoreForColor(bestAnalysis, color);
+  const moveScore = stockfishScoreForColor(playedAnalysis, color);
+  if (!Number.isFinite(bestScore) || !Number.isFinite(moveScore)) {
+    return evaluateMoveFeedback(state, move);
+  }
+
+  const rawLoss = Math.max(0, bestScore - moveScore);
+  const loss = Math.max(0, rawLoss - exchangeCredit(state, move));
+  return feedbackFromLoss(loss);
+}
+
+function stockfishScoreForColor(analysis: StockfishAnalysis | null, color: Color): number {
+  if (!analysis) return Number.NaN;
+  const mate = analysis.mate;
+  const whiteScore =
+    typeof mate === "number"
+      ? mate > 0
+        ? 100_000 - Math.abs(mate) * 100
+        : -100_000 + Math.abs(mate) * 100
+      : typeof analysis.evaluation === "number"
+        ? Math.round(analysis.evaluation * 100)
+        : Number.NaN;
+  return color === "w" ? whiteScore : -whiteScore;
+}
+
+function movesMatch(a: Move, b: Move): boolean {
+  return (
+    a.from.file === b.from.file &&
+    a.from.rank === b.from.rank &&
+    a.to.file === b.to.file &&
+    a.to.rank === b.to.rank &&
+    a.promotion === b.promotion &&
+    a.portalTo?.file === b.portalTo?.file &&
+    a.portalTo?.rank === b.portalTo?.rank
+  );
+}
+
+function feedbackFromLoss(loss: number): MoveFeedback {
   const grade = gradeFromLoss(loss);
   const feedback = MOVE_FEEDBACK[grade];
   const score = Math.max(0, Math.min(100, Math.round(100 - loss / 12)));
   return { ...feedback, score, loss };
+}
+
+function exchangeCredit(state: GameState, move: Move): number {
+  if (!move.captured) return 0;
+
+  const capturedValue = pieceValue(move.captured);
+  const moverValue = pieceValue(move.piece);
+  if (capturedValue < moverValue) return 0;
+
+  const next = makeMove(state, move);
+  const enemyReplies = allLegalMoves(next);
+  const recaptureAvailable = enemyReplies.some((reply) =>
+    reply.to.file === move.to.file &&
+    reply.to.rank === move.to.rank &&
+    Boolean(reply.captured)
+  );
+  if (!recaptureAvailable) return 0;
+
+  const tradeBonus = Math.min(36, 12 + Math.round((capturedValue - moverValue) / 20));
+  return tradeBonus;
 }
 
 function evaluateMoveLine(next: GameState, color: Color): number {

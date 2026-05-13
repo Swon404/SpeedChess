@@ -30,10 +30,12 @@ export type PerformanceMode = "bot" | "human";
 export interface PerformanceRecord {
   playedAt: number;
   mode: PerformanceMode;
+  botLevel?: number;
   outcome: "win" | "loss" | "draw";
   stars: number;
   score: number;
   moveGrades?: number[];
+  timerSeconds?: number;
 }
 
 export interface PerformanceWindowSummary {
@@ -141,6 +143,11 @@ function clampScore(value: unknown): number {
   return Math.max(0, Math.min(100, Math.round(n)));
 }
 
+function normalizeTimerSeconds(value: unknown): number | undefined {
+  if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
+  return Math.max(0, Math.round(value));
+}
+
 function normalizePerformanceMode(value: unknown): PerformanceMode {
   return value === "human" ? "human" : "bot";
 }
@@ -157,13 +164,18 @@ function normalizePerformanceRecord(value: unknown): PerformanceRecord | null {
   return {
     playedAt,
     mode: normalizePerformanceMode(record.mode),
+    botLevel:
+      typeof record.botLevel === "number" && Number.isFinite(record.botLevel)
+        ? Math.max(1, Math.min(20, Math.round(record.botLevel)))
+        : undefined,
     outcome,
     stars: clampStars(record.stars),
     score: clampScore(record.score),
     moveGrades: Array.isArray(record.moveGrades)
       ? record.moveGrades
           .map((grade) => clampStars(grade))
-      : undefined
+      : undefined,
+    timerSeconds: normalizeTimerSeconds(record.timerSeconds)
   };
 }
 
@@ -186,10 +198,25 @@ function normalizeStats(stats: Partial<ProfileStats> | undefined): ProfileStats 
   };
 }
 
+function performanceWeight(record: PerformanceRecord): number {
+  if (record.mode !== "bot") return 1;
+  const level = record.botLevel ?? 1;
+  return 0.75 + (level - 1) * 0.05;
+}
+
 function averageScore(records: PerformanceRecord[]): number {
   if (records.length === 0) return 0;
-  const total = records.reduce((sum, record) => sum + clampScore(record.score), 0);
-  return Math.round(total / records.length);
+  const weighted = records.reduce(
+    (sum, record) => {
+      const weight = performanceWeight(record);
+      return {
+        score: sum.score + clampScore(record.score) * weight,
+        weight: sum.weight + weight
+      };
+    },
+    { score: 0, weight: 0 }
+  );
+  return weighted.weight > 0 ? Math.round(weighted.score / weighted.weight) : 0;
 }
 
 function summarizeWindow(records: PerformanceRecord[]): PerformanceWindowSummary {
@@ -299,7 +326,7 @@ export function recordResult(
   profileId: string,
   opponent: { kind: "human" } | { kind: "bot"; level: number },
   outcome: "win" | "loss" | "draw",
-  performance?: { playedAt?: number; stars?: number; score?: number; moveGrades?: number[] }
+  performance?: { playedAt?: number; stars?: number; score?: number; moveGrades?: number[]; timerSeconds?: number }
 ): void {
   const p = store.profiles.find((x) => x.id === profileId);
   if (!p) return;
@@ -310,10 +337,12 @@ export function recordResult(
   const record: PerformanceRecord = {
     playedAt: performance?.playedAt ?? Date.now(),
     mode: opponent.kind === "bot" ? "bot" : "human",
+    botLevel: opponent.kind === "bot" ? opponent.level : undefined,
     outcome,
     stars: clampStars(performance?.stars),
     score: clampScore(performance?.score),
-    moveGrades: performance?.moveGrades?.map((grade) => clampStars(grade))
+    moveGrades: performance?.moveGrades?.map((grade) => clampStars(grade)),
+    timerSeconds: normalizeTimerSeconds(performance?.timerSeconds)
   };
   p.stats.totalStars = (p.stats.totalStars ?? 0) + record.stars;
   p.stats.performanceHistory = [...(p.stats.performanceHistory ?? []), record];

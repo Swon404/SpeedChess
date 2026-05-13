@@ -11,6 +11,7 @@ import { toSAN } from "./engine/notation";
 import { chooseBotMove } from "./engine/bot";
 import {
   evaluateMoveFeedback,
+  evaluateMoveFeedbackWithEngine,
   type GamePerformanceSummary,
   type MoveFeedback,
   summarizeMoveGrades
@@ -41,6 +42,18 @@ export interface RatedMoveEntry extends RatedMoveFeedback {
 }
 
 type CachedRatedMoveEntry = Omit<RatedMoveEntry, "playerName">;
+
+function sameMove(a: Move, b: Move): boolean {
+  return (
+    a.from.file === b.from.file &&
+    a.from.rank === b.from.rank &&
+    a.to.file === b.to.file &&
+    a.to.rank === b.to.rank &&
+    a.promotion === b.promotion &&
+    a.portalTo?.file === b.portalTo?.file &&
+    a.portalTo?.rank === b.portalTo?.rank
+  );
+}
 
 interface PlayerGamePerformance extends GamePerformanceSummary {
   color: Color;
@@ -188,6 +201,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [lastMoveReplayNonce, setLastMoveReplayNonce] = useState(0);
   const [moveFeedback, setMoveFeedback] = useState<RatedMoveFeedback | null>(null);
   const [gamePerformance, setGamePerformance] = useState<{ w: PlayerGamePerformance | null; b: PlayerGamePerformance | null }>(blankGamePerformance());
+  const [ratedMovesVersion, setRatedMovesVersion] = useState(0);
   const stateRef = useRef(state);
   useEffect(() => { stateRef.current = state; }, [state]);
   // Track latest store for callbacks that need the freshest settings.
@@ -197,6 +211,34 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const moveGradesRef = useRef<{ w: number[]; b: number[] }>({ w: [], b: [] });
   const queuedMoveSoundRef = useRef<"blunder" | "grandmaster" | null>(null);
   const ratedMoveCacheRef = useRef<Array<CachedRatedMoveEntry | null>>([]);
+
+  const syncMoveGradesFromCache = useCallback((cache: Array<CachedRatedMoveEntry | null>, historyLength: number) => {
+    const grades: { w: number[]; b: number[] } = { w: [], b: [] };
+    for (let index = 0; index < historyLength; index++) {
+      const entry = cache[index];
+      if (!entry) continue;
+      grades[entry.color].push(entry.grade);
+    }
+    moveGradesRef.current = grades;
+  }, []);
+
+  const updateRatedMoveCache = useCallback((index: number, entry: CachedRatedMoveEntry | null, historyLength: number) => {
+    const next = ratedMoveCacheRef.current.slice(0, Math.max(ratedMoveCacheRef.current.length, index + 1));
+    next[index] = entry;
+    ratedMoveCacheRef.current = next;
+    syncMoveGradesFromCache(next, historyLength);
+    setRatedMovesVersion((version) => version + 1);
+  }, [syncMoveGradesFromCache]);
+
+  const publishMoveFeedback = useCallback((feedback: MoveFeedback, color: Color, moveNumber: number, playerName: string) => {
+    setGamePerformance(blankGamePerformance());
+    setMoveFeedback({
+      ...feedback,
+      color,
+      moveNumber,
+      playerName
+    });
+  }, []);
 
   useEffect(() => () => {
     if (moveFeedbackTimeoutRef.current !== null) window.clearTimeout(moveFeedbackTimeoutRef.current);
@@ -234,7 +276,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         playerName: entry.color === "w" ? players.w : players.b
       }];
     });
-  }, [stack, state.history.length, players]);
+  }, [stack, state.history.length, players, ratedMovesVersion]);
 
   const result = useMemo(() => gameResult(state), [state]);
 
@@ -380,9 +422,30 @@ export function GameProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         if (move) {
           const feedback = evaluateMoveFeedback(state, move);
-          queuedMoveSoundRef.current = feedback.grade === 0 ? "blunder" : null;
+          const moveIndex = state.history.length;
           const san = toSAN(state, move);
+          updateRatedMoveCache(moveIndex, {
+            ...feedback,
+            color: move.color,
+            moveNumber: moveIndex + 1,
+            san
+          }, moveIndex + 1);
+          queuedMoveSoundRef.current = feedback.grade === 0 ? "blunder" : null;
           dispatch({ type: "make", move, san });
+          if (!state.portals) {
+            void evaluateMoveFeedbackWithEngine(state, move).then((engineFeedback) => {
+              const liveMove = stateRef.current.history[moveIndex];
+              if (!liveMove || !sameMove(liveMove, move)) return;
+              updateRatedMoveCache(moveIndex, {
+                ...engineFeedback,
+                color: move.color,
+                moveNumber: moveIndex + 1,
+                san
+              }, stateRef.current.history.length);
+            }).catch(() => {
+              // Keep the local evaluator result when Stockfish is unavailable.
+            });
+          }
         }
       } finally {
         // Always clear the thinking flag so the timer can resume ticking on
@@ -414,7 +477,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
         recordResult(updated, activeProfile.id, { kind: "bot", level: lvl }, outcome, {
           stars: summaries.w.stars,
           score: summaries.w.score,
-          moveGrades: moveGradesRef.current.w
+          moveGrades: moveGradesRef.current.w,
+          timerSeconds: store.settings.timerSeconds
         });
         saveActiveGame(updated, activeProfile.id, null);
         const refreshed = updated.profiles.find((p) => p.id === activeProfile.id) ?? null;
@@ -432,14 +496,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
         recordResult(updated, wProf.id, { kind: "human" }, wOutcome, {
           stars: summaries.w.stars,
           score: summaries.w.score,
-          moveGrades: moveGradesRef.current.w
+          moveGrades: moveGradesRef.current.w,
+          timerSeconds: store.settings.timerSeconds
         });
       }
       if (bProf && summaries.b) {
         recordResult(updated, bProf.id, { kind: "human" }, bOutcome, {
           stars: summaries.b.stars,
           score: summaries.b.score,
-          moveGrades: moveGradesRef.current.b
+          moveGrades: moveGradesRef.current.b,
+          timerSeconds: store.settings.timerSeconds
         });
       }
       if (summaries.w) nextPerformance.w = toPlayerGamePerformance("w", players.w, summaries.w, wProf?.stats.totalStars ?? null, "human");
@@ -495,25 +561,49 @@ export function GameProvider({ children }: { children: ReactNode }) {
     } else if (candidates.some((m) => m.promotion)) {
       move = candidates.find((m) => m.promotion === (promotion ?? "Q")) ?? candidates[0];
     }
+    const moveIndex = state.history.length;
     const feedback = isHumanControlledColor(mode, mover) ? evaluateMoveFeedback(state, move) : null;
     const san = toSAN(state, move);
+    if (feedback) {
+      updateRatedMoveCache(moveIndex, {
+        ...feedback,
+        color: mover,
+        moveNumber: moveIndex + 1,
+        san
+      }, moveIndex + 1);
+    }
     dispatch({ type: "make", move, san });
     setSelected(null);
     if (feedback) {
       queuedMoveSoundRef.current = feedback.sound;
-      moveGradesRef.current[mover] = [...moveGradesRef.current[mover], feedback.grade];
-      setGamePerformance(blankGamePerformance());
-      setMoveFeedback({
-        ...feedback,
-        color: mover,
-        moveNumber: state.history.length + 1,
-        playerName: mover === "w" ? players.w : players.b
-      });
-      if (moveFeedbackTimeoutRef.current !== null) window.clearTimeout(moveFeedbackTimeoutRef.current);
-      moveFeedbackTimeoutRef.current = window.setTimeout(() => setMoveFeedback(null), 2100);
+      publishMoveFeedback(feedback, mover, moveIndex + 1, mover === "w" ? players.w : players.b);
+      if (!state.portals) {
+        void evaluateMoveFeedbackWithEngine(state, move).then((engineFeedback) => {
+          const liveMove = stateRef.current.history[moveIndex];
+          if (!liveMove || !sameMove(liveMove, move)) return;
+          updateRatedMoveCache(moveIndex, {
+            ...engineFeedback,
+            color: mover,
+            moveNumber: moveIndex + 1,
+            san
+          }, stateRef.current.history.length);
+          setGamePerformance(blankGamePerformance());
+          setMoveFeedback((current) => {
+            if (!current || current.color !== mover || current.moveNumber !== moveIndex + 1) return current;
+            return {
+              ...engineFeedback,
+              color: mover,
+              moveNumber: moveIndex + 1,
+              playerName: mover === "w" ? players.w : players.b
+            };
+          });
+        }).catch(() => {
+          // Keep the local evaluator result when Stockfish is unavailable.
+        });
+      }
     }
     return true;
-  }, [state, paused, mode, players]);
+  }, [state, paused, mode, players, publishMoveFeedback, updateRatedMoveCache]);
 
   const replayLastMove = useCallback(() => {
     if (state.history.length === 0) return;
@@ -522,12 +612,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const undo = useCallback(() => {
     const undoCount = botLevelOf(mode) !== null ? 2 : 1;
-    const undoneMoves = state.history.slice(-undoCount);
-    for (const move of undoneMoves) {
-      if (move && move.from.file >= 0 && isHumanControlledColor(mode, move.color)) {
-        moveGradesRef.current[move.color] = moveGradesRef.current[move.color].slice(0, -1);
-      }
-    }
+    const nextHistoryLength = Math.max(0, state.history.length - undoCount);
+    const nextCache = ratedMoveCacheRef.current.slice(0, nextHistoryLength);
+    ratedMoveCacheRef.current = nextCache;
+    syncMoveGradesFromCache(nextCache, nextHistoryLength);
+    setRatedMovesVersion((version) => version + 1);
     // Undo twice if playing a bot and it's the human's turn (to remove bot reply + own move).
     dispatch({ type: "undo" });
     if (botLevelOf(mode) !== null) dispatch({ type: "undo" });
@@ -535,7 +624,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     queuedMoveSoundRef.current = null;
     setMoveFeedback(null);
     setGamePerformance(blankGamePerformance());
-  }, [mode, state.history]);
+  }, [mode, state.history, syncMoveGradesFromCache]);
 
   const newGame = useCallback((m: Mode, p?: Partial<Players>, opts?: NewGameOptions) => {
     if (
@@ -569,6 +658,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setPaused(false);
     setLastMoveReplayNonce(0);
     moveGradesRef.current = { w: [], b: [] };
+    ratedMoveCacheRef.current = [];
+    setRatedMovesVersion((version) => version + 1);
     queuedMoveSoundRef.current = null;
     if (moveFeedbackTimeoutRef.current !== null) window.clearTimeout(moveFeedbackTimeoutRef.current);
     setMoveFeedback(null);
@@ -594,6 +685,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setPaused(false);
     setLastMoveReplayNonce(0);
     moveGradesRef.current = { w: [], b: [] };
+    ratedMoveCacheRef.current = [];
+    setRatedMovesVersion((version) => version + 1);
     queuedMoveSoundRef.current = null;
     if (moveFeedbackTimeoutRef.current !== null) window.clearTimeout(moveFeedbackTimeoutRef.current);
     setMoveFeedback(null);

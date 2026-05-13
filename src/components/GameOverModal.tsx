@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { summarizeMoveGrades } from "../engine/performance";
 import { useGame } from "../GameContext";
 
 export function GameOverModal() {
-  const { result, mode, players, newGame, state, gamePerformance } = useGame();
+  const { result, mode, players, newGame, state, gamePerformance, ratedMoves } = useGame();
   const nav = useNavigate();
   const [dismissed, setDismissed] = useState(false);
 
@@ -43,6 +44,8 @@ export function GameOverModal() {
   }
 
   const performanceCards = [gamePerformance.w, gamePerformance.b].filter((entry) => !!entry);
+  const overallGrades = ratedMoves.map((move) => move.grade);
+  const overallSummary = overallGrades.length > 0 ? summarizeMoveGrades(overallGrades) : null;
 
   return (
     <>
@@ -61,6 +64,22 @@ export function GameOverModal() {
             <div className="game-over-emoji">{emoji}</div>
             <h2>{title}</h2>
             <p>{subtitle}</p>
+            {overallSummary && (
+              <div className="game-performance-card game-performance-card-overall">
+                <div className="game-performance-head">
+                  <strong>Game rating</strong>
+                  <span className="game-performance-stars" aria-label={`${overallSummary.stars} stars`}>
+                    {"★".repeat(overallSummary.stars)}{"☆".repeat(5 - overallSummary.stars)}
+                  </span>
+                </div>
+                <div className="game-performance-title">{overallSummary.title} · {overallSummary.score}/100</div>
+                <div className="game-performance-summary">{overallSummary.summary}</div>
+                <div className="game-performance-meta">
+                  <span>{ratedMoves.length} rated moves</span>
+                  <span>{overallSummary.averageGrade.toFixed(1)} average stars</span>
+                </div>
+              </div>
+            )}
             {performanceCards.length > 0 && (
               <div className="game-performance-list">
                 {performanceCards.map((entry) => (
