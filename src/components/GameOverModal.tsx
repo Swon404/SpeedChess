@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useGame } from "../GameContext";
 
 export function GameOverModal() {
-  const { result, mode, players, newGame, state } = useGame();
+  const { result, mode, players, newGame, state, gamePerformance } = useGame();
   const nav = useNavigate();
   const [dismissed, setDismissed] = useState(false);
 
@@ -42,6 +42,8 @@ export function GameOverModal() {
     emoji = "🤝";
   }
 
+  const performanceCards = [gamePerformance.w, gamePerformance.b].filter((entry) => !!entry);
+
   return (
     <>
       {dismissed ? (
@@ -59,6 +61,27 @@ export function GameOverModal() {
             <div className="game-over-emoji">{emoji}</div>
             <h2>{title}</h2>
             <p>{subtitle}</p>
+            {performanceCards.length > 0 && (
+              <div className="game-performance-list">
+                {performanceCards.map((entry) => (
+                  <div key={entry.color} className="game-performance-card">
+                    <div className="game-performance-head">
+                      <strong>{entry.playerName}</strong>
+                      <span className="game-performance-stars" aria-label={`${entry.stars} stars`}>
+                        {"★".repeat(entry.stars)}{"☆".repeat(5 - entry.stars)}
+                      </span>
+                    </div>
+                    <div className="game-performance-title">{entry.title} · {entry.score}/100</div>
+                    <div className="game-performance-summary">{entry.summary}</div>
+                    <div className="game-performance-meta">
+                      <span>+{entry.addedStars} stars</span>
+                      <span>{entry.totalStars === null ? "Untracked total" : `${entry.totalStars} total stars`}</span>
+                      <span>{entry.mode === "bot" ? "Vs bot" : "Local play"}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="game-over-actions">
               <button className="primary" onClick={() => newGame(mode, players)}>
                 Rematch

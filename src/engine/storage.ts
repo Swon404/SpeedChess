@@ -21,6 +21,31 @@ export interface ProfileStats {
   badges: string[];
   /** Per-puzzle attempt + completion record, keyed by puzzle id. */
   puzzleProgress?: Record<string, { solved: boolean; attempts: number; solvedAt?: number }>;
+  totalStars?: number;
+  performanceHistory?: PerformanceRecord[];
+}
+
+export type PerformanceMode = "bot" | "human";
+
+export interface PerformanceRecord {
+  playedAt: number;
+  mode: PerformanceMode;
+  outcome: "win" | "loss" | "draw";
+  stars: number;
+  score: number;
+  moveGrades?: number[];
+}
+
+export interface PerformanceWindowSummary {
+  games: number;
+  stars: number;
+  rating: number;
+}
+
+export interface ProfilePerformanceSummary {
+  overall: PerformanceWindowSummary;
+  last7Days: PerformanceWindowSummary;
+  last30Days: PerformanceWindowSummary;
 }
 
 export type BoardTheme = "wood" | "blue" | "green" | "neon";
@@ -38,6 +63,7 @@ export interface Settings {
   haptics: boolean;
   autoFlip: boolean;
   showThreats: boolean;
+  showMoveRatingPopup: boolean;
   explodeOnCapture: boolean;
   portalCreatorDefault: PieceType;
   portalOpponentDefault: "two-player" | "bot";
@@ -70,6 +96,7 @@ const DEFAULT_SETTINGS: Settings = {
   haptics: true,
   autoFlip: true,
   showThreats: false,
+  showMoveRatingPopup: true,
   explodeOnCapture: false,
   portalCreatorDefault: "N",
   portalOpponentDefault: "bot",
@@ -100,7 +127,100 @@ function emptyStats(): ProfileStats {
   return {
     wins: 0, losses: 0, draws: 0, rating: 800,
     byBotLevel: {}, puzzlesSolved: 0, streak: 0, badges: [],
-    puzzleProgress: {}
+    puzzleProgress: {}, totalStars: 0, performanceHistory: []
+  };
+}
+
+function clampStars(value: unknown): number {
+  const n = typeof value === "number" && Number.isFinite(value) ? Math.round(value) : 0;
+  return Math.max(0, Math.min(5, n));
+}
+
+function clampScore(value: unknown): number {
+  const n = typeof value === "number" && Number.isFinite(value) ? value : 0;
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+
+function normalizePerformanceMode(value: unknown): PerformanceMode {
+  return value === "human" ? "human" : "bot";
+}
+
+function normalizePerformanceRecord(value: unknown): PerformanceRecord | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Partial<PerformanceRecord>;
+  const playedAt = typeof record.playedAt === "number" && Number.isFinite(record.playedAt)
+    ? record.playedAt
+    : Date.now();
+  const outcome = record.outcome === "win" || record.outcome === "loss" || record.outcome === "draw"
+    ? record.outcome
+    : "draw";
+  return {
+    playedAt,
+    mode: normalizePerformanceMode(record.mode),
+    outcome,
+    stars: clampStars(record.stars),
+    score: clampScore(record.score),
+    moveGrades: Array.isArray(record.moveGrades)
+      ? record.moveGrades
+          .map((grade) => clampStars(grade))
+      : undefined
+  };
+}
+
+function normalizeStats(stats: Partial<ProfileStats> | undefined): ProfileStats {
+  const base = emptyStats();
+  return {
+    wins: typeof stats?.wins === "number" ? stats.wins : base.wins,
+    losses: typeof stats?.losses === "number" ? stats.losses : base.losses,
+    draws: typeof stats?.draws === "number" ? stats.draws : base.draws,
+    rating: typeof stats?.rating === "number" ? stats.rating : base.rating,
+    byBotLevel: stats?.byBotLevel ?? base.byBotLevel,
+    puzzlesSolved: typeof stats?.puzzlesSolved === "number" ? stats.puzzlesSolved : base.puzzlesSolved,
+    streak: typeof stats?.streak === "number" ? stats.streak : base.streak,
+    badges: Array.isArray(stats?.badges) ? stats.badges.slice() : base.badges,
+    puzzleProgress: { ...(stats?.puzzleProgress ?? base.puzzleProgress) },
+    totalStars: typeof stats?.totalStars === "number" ? stats.totalStars : base.totalStars,
+    performanceHistory: Array.isArray(stats?.performanceHistory)
+      ? stats.performanceHistory.map((record) => normalizePerformanceRecord(record)).filter((record): record is PerformanceRecord => !!record)
+      : base.performanceHistory
+  };
+}
+
+function averageScore(records: PerformanceRecord[]): number {
+  if (records.length === 0) return 0;
+  const total = records.reduce((sum, record) => sum + clampScore(record.score), 0);
+  return Math.round(total / records.length);
+}
+
+function summarizeWindow(records: PerformanceRecord[]): PerformanceWindowSummary {
+  return {
+    games: records.length,
+    stars: records.reduce((sum, record) => sum + clampStars(record.stars), 0),
+    rating: averageScore(records)
+  };
+}
+
+export function getPerformanceRecords(
+  stats: ProfileStats,
+  mode: PerformanceMode | "all" = "all"
+): PerformanceRecord[] {
+  const history = stats.performanceHistory ?? [];
+  if (mode === "all") return history.slice();
+  return history.filter((record) => record.mode === mode);
+}
+
+export function getPerformanceSummary(
+  stats: ProfileStats,
+  mode: PerformanceMode | "all" = "all",
+  now = Date.now()
+): ProfilePerformanceSummary {
+  const records = getPerformanceRecords(stats, mode);
+  const last7Cutoff = now - 7 * 24 * 60 * 60 * 1000;
+  const last30Cutoff = now - 30 * 24 * 60 * 60 * 1000;
+  return {
+    overall: summarizeWindow(records),
+    last7Days: summarizeWindow(records.filter((record) => record.playedAt >= last7Cutoff)),
+    last30Days: summarizeWindow(records.filter((record) => record.playedAt >= last30Cutoff))
   };
 }
 
@@ -119,6 +239,10 @@ export function load(): Store {
       portalMaxDefault: normalizePortalMax(rawSettings?.portalMaxDefault)
     };
     parsed.savedGames = parsed.savedGames ?? {};
+    parsed.profiles = (parsed.profiles ?? []).map((profile) => ({
+      ...profile,
+      stats: normalizeStats(profile.stats)
+    }));
     return parsed;
   } catch {
     return { profiles: [], settings: { ...DEFAULT_SETTINGS }, savedGames: {} };
@@ -174,13 +298,25 @@ export function recordResult(
   store: Store,
   profileId: string,
   opponent: { kind: "human" } | { kind: "bot"; level: number },
-  outcome: "win" | "loss" | "draw"
+  outcome: "win" | "loss" | "draw",
+  performance?: { playedAt?: number; stars?: number; score?: number; moveGrades?: number[] }
 ): void {
   const p = store.profiles.find((x) => x.id === profileId);
   if (!p) return;
+  p.stats = normalizeStats(p.stats);
   if (outcome === "win") { p.stats.wins++; p.stats.streak++; }
   else if (outcome === "loss") { p.stats.losses++; p.stats.streak = 0; }
   else { p.stats.draws++; }
+  const record: PerformanceRecord = {
+    playedAt: performance?.playedAt ?? Date.now(),
+    mode: opponent.kind === "bot" ? "bot" : "human",
+    outcome,
+    stars: clampStars(performance?.stars),
+    score: clampScore(performance?.score),
+    moveGrades: performance?.moveGrades?.map((grade) => clampStars(grade))
+  };
+  p.stats.totalStars = (p.stats.totalStars ?? 0) + record.stars;
+  p.stats.performanceHistory = [...(p.stats.performanceHistory ?? []), record];
   if (opponent.kind === "bot") {
     const key = opponent.level;
     const slot = p.stats.byBotLevel[key] ?? { wins: 0, losses: 0, draws: 0 };

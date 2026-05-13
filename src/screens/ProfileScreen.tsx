@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useGame } from "../GameContext";
+import { getPerformanceSummary } from "../engine/storage";
 
 export function ProfileScreen() {
   const { store, activeProfile, addProfile, setActiveProfile, removeProfile, renamePlayer } = useGame();
@@ -28,9 +29,41 @@ export function ProfileScreen() {
       <ul className="profile-list">
         {store.profiles.map((p) => (
           <li key={p.id} className={activeProfile?.id === p.id ? "active" : ""}>
+            {(() => {
+              const overall = getPerformanceSummary(p.stats, "all");
+              const vsBot = getPerformanceSummary(p.stats, "bot");
+              const local = getPerformanceSummary(p.stats, "human");
+              return (
+                <>
             <div className="profile-main">
               <strong>{p.name}</strong>
-              <small> rating {p.stats.rating} · {p.stats.wins}W/{p.stats.losses}L/{p.stats.draws}D</small>
+              <small> classic rating {p.stats.rating} · stars {p.stats.totalStars ?? 0} · {p.stats.wins}W/{p.stats.losses}L/{p.stats.draws}D</small>
+            </div>
+            <div className="profile-performance-grid">
+              <div className="profile-performance-row">
+                <span>Overall</span>
+                <strong>{overall.overall.rating}</strong>
+                <strong>{overall.last7Days.rating}</strong>
+                <strong>{overall.last30Days.rating}</strong>
+              </div>
+              <div className="profile-performance-row muted">
+                <span>Vs bot</span>
+                <strong>{vsBot.overall.rating}</strong>
+                <strong>{vsBot.last7Days.rating}</strong>
+                <strong>{vsBot.last30Days.rating}</strong>
+              </div>
+              <div className="profile-performance-row muted">
+                <span>Local</span>
+                <strong>{local.overall.rating}</strong>
+                <strong>{local.last7Days.rating}</strong>
+                <strong>{local.last30Days.rating}</strong>
+              </div>
+              <div className="profile-performance-header">
+                <span>Mode</span>
+                <span>Life</span>
+                <span>7d</span>
+                <span>30d</span>
+              </div>
             </div>
             <div className="profile-actions">
               <button onClick={() => setActiveProfile(p.id)}>
@@ -44,6 +77,9 @@ export function ProfileScreen() {
                 if (confirm(`Delete ${p.name}? Stats will be lost.`)) removeProfile(p.id);
               }}>Delete</button>
             </div>
+                </>
+              );
+            })()}
           </li>
         ))}
         {store.profiles.length === 0 && <li className="empty">No players yet — add one above.</li>}

@@ -41,7 +41,9 @@ export function Board({ flipped = false }: Props) {
     store,
     mode,
     hint,
-    lastMoveReplayNonce
+    lastMoveReplayNonce,
+    moveFeedback,
+    clearMoveFeedback
   } = useGame();
   const theme = store.settings.theme;
   const pieceSet = store.settings.pieceSet;
@@ -251,12 +253,28 @@ export function Board({ flipped = false }: Props) {
                       <span className="boom-bit b6">⭐</span>
                     </span>
                   )}
+                  {isLastTo && moveFeedback && (
+                    <span className={`move-rating-badge grade-${moveFeedback.grade}`} aria-hidden="true">
+                      {moveFeedback.emoji}
+                    </span>
+                  )}
                 </button>
               );
             })}
           </div>
         ))}
       </div>
+
+      {moveFeedback && store.settings.showMoveRatingPopup && (
+        <div className={`move-rating-toast grade-${moveFeedback.grade}`} role="status" aria-live="polite">
+          <button className="move-rating-dismiss" onClick={clearMoveFeedback} aria-label="Dismiss move rating">✕</button>
+          <div className="move-rating-emoji" aria-hidden="true">{moveFeedback.emoji}</div>
+          <div className="move-rating-copy">
+            <strong>{moveFeedback.playerName}: {moveFeedback.label}</strong>
+            <span>{moveFeedback.title} · {moveFeedback.score}/100</span>
+          </div>
+        </div>
+      )}
 
       {pending && (
         <div className="modal-overlay" onClick={() => setPending(null)}>
