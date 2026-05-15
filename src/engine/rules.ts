@@ -1,6 +1,8 @@
 import {
   Color,
   cloneState,
+  customPieceDefFor,
+  CustomPieceDef,
   GameState,
   inBounds,
   Move,
@@ -173,6 +175,47 @@ function pushPawn(
   }
 }
 
+function customPieceMoves(state: GameState, from: Square, def: CustomPieceDef, piece: Piece): Move[] {
+  const out: Move[] = [];
+  // Leaps: jump to fixed offsets ignoring blocking pieces
+  for (const [df, dr] of def.leapPatterns) {
+    const to = { file: from.file + df, rank: from.rank + dr };
+    if (!inBounds(to)) continue;
+    const target = pieceAt(state, to);
+    if (!target) out.push({ from, to, piece: piece.type, color: piece.color });
+    else if (target.color !== piece.color)
+      out.push({ from, to, piece: piece.type, color: piece.color, captured: target.type });
+  }
+  // Steps: one-square moves blocked by pieces
+  for (const [df, dr] of def.stepDirs) {
+    const to = { file: from.file + df, rank: from.rank + dr };
+    if (!inBounds(to)) continue;
+    const target = pieceAt(state, to);
+    if (!target) out.push({ from, to, piece: piece.type, color: piece.color });
+    else if (target.color !== piece.color)
+      out.push({ from, to, piece: piece.type, color: piece.color, captured: target.type });
+  }
+  // Slides: multi-square rays capped at maxRange
+  const cap = Math.min(def.maxRange, 8);
+  for (const [df, dr] of def.slideDirs) {
+    let cur = { file: from.file + df, rank: from.rank + dr };
+    let steps = 0;
+    while (inBounds(cur) && steps < cap) {
+      steps++;
+      const target = pieceAt(state, cur);
+      if (!target) {
+        out.push({ from, to: { ...cur }, piece: piece.type, color: piece.color });
+      } else {
+        if (target.color !== piece.color)
+          out.push({ from, to: { ...cur }, piece: piece.type, color: piece.color, captured: target.type });
+        break;
+      }
+      cur = { file: cur.file + df, rank: cur.rank + dr };
+    }
+  }
+  return out;
+}
+
 export function pseudoMovesFrom(state: GameState, from: Square): Move[] {
   const p = pieceAt(state, from);
   if (!p) return [];
@@ -208,6 +251,11 @@ export function pseudoMovesFrom(state: GameState, from: Square): Move[] {
         }
       }
       return base;
+    }
+    case "X1": {
+      const def = customPieceDefFor(state, p);
+      if (!def) return [];
+      return customPieceMoves(state, from, def, p);
     }
   }
 }
@@ -253,6 +301,17 @@ export function isSquareAttacked(state: GameState, sq: Square, by: Color): boole
         break;
       }
       cur = add(cur, d);
+    }
+  }
+  // Custom piece (X1) - each X1 can now have its own definition.
+  for (let rank = 0; rank < 8; rank++) {
+    for (let file = 0; file < 8; file++) {
+      const from = { file, rank };
+      const p = pieceAt(state, from);
+      if (!p || p.color !== by || p.type !== "X1") continue;
+      const def = customPieceDefFor(state, p);
+      if (!def) continue;
+      if (customPieceMoves(state, from, def, p).some((move) => sqEq(move.to, sq))) return true;
     }
   }
   return false;

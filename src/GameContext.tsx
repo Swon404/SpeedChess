@@ -2,7 +2,7 @@ import {
   createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useReducer, useRef, useState
 } from "react";
 import {
-  Color, GameState, Move, PieceType, Square, initialState, pieceAt
+  Color, CustomPieceDef, GameState, Move, PieceType, Square, cloneState, initialState, pieceAt, positionKey
 } from "./engine/board";
 import {
   forfeitMove, gameResult, inCheck, legalMovesFrom, makeMove
@@ -18,7 +18,7 @@ import {
 } from "./engine/performance";
 import { playSound } from "./engine/sound";
 import {
-  load, Profile, recordResult, saveActiveGame, Settings, Store, updateSettings,
+  load, Profile, recordResult, saveActiveGame, SavedBoardLayout, SavedCustomGame, Settings, Store, updateSettings,
   createProfile, deleteProfile, renameProfile,
   loadActiveSession, saveActiveSession, clearActiveSession,
   recordPuzzleSolved as storeRecordPuzzleSolved,
@@ -28,7 +28,8 @@ import {
 type Mode =
   | { kind: "two-player" }
   | { kind: "bot"; level: number }
-  | { kind: "portal"; opponent: "two-player" | { kind: "bot"; level: number }; creator: PieceType; portalMax?: number };
+  | { kind: "portal"; opponent: "two-player" | { kind: "bot"; level: number }; creator: PieceType; portalMax?: number }
+  | { kind: "custom"; customPiece?: CustomPieceDef; opponent: "two-player" | { kind: "bot"; level: number } };
 export interface Players { w: string; b: string; }
 
 interface RatedMoveFeedback extends MoveFeedback {
@@ -65,6 +66,8 @@ interface PlayerGamePerformance extends GamePerformanceSummary {
 
 interface NewGameOptions {
   timerSeconds?: number;
+  boardLayout?: SavedBoardLayout | null;
+  customGame?: SavedCustomGame | null;
 }
 
 /** Build the initial state for Portal Chess (creator-type portals). */
@@ -74,6 +77,72 @@ function portalInitialState(creator: PieceType, portalMax = 2): GameState {
   s.portalCreators = { w: creator, b: creator };
   s.portalAdjacencyRule = false;
   return s;
+}
+
+/** Build an initial state from a saved board layout or custom game (white mirrored to black). */
+function customBoardState(layout: SavedBoardLayout | SavedCustomGame): GameState {
+  const empty: (import("./engine/board").Piece | null)[][] =
+    Array.from({ length: 8 }, () => Array(8).fill(null));
+  const customPieces = "customPieces" in layout && Array.isArray(layout.customPieces)
+    ? Object.fromEntries(layout.customPieces.map((piece) => [piece.id, piece.def]))
+    : undefined;
+  const legacyCustomId = "legacy-x1";
+  for (const square of layout.squares) {
+    const { rank, file, type } = square;
+    if (rank < 0 || rank > 3 || file < 0 || file > 7) continue;
+    const customId =
+      type === "X1"
+        ? (("customPieceId" in square && square.customPieceId) || (("customPieceDef" in layout && layout.customPieceDef) ? legacyCustomId : undefined))
+        : undefined;
+    empty[rank][file] = { type, color: "w", customId };
+    empty[7 - rank][file] = { type, color: "b", customId };
+  }
+  const wKok = empty[0][4]?.type === "K" && empty[0][4]?.color === "w";
+  const bKok = empty[7][4]?.type === "K" && empty[7][4]?.color === "b";
+  const state: GameState = {
+    board: empty,
+    turn: "w",
+    castling: {
+      wK: wKok && empty[0][7]?.type === "R",
+      wQ: wKok && empty[0][0]?.type === "R",
+      bK: bKok && empty[7][7]?.type === "R",
+      bQ: bKok && empty[7][0]?.type === "R"
+    },
+    enPassant: null,
+    halfmove: 0,
+    fullmove: 1,
+    history: [],
+    forfeits: [],
+    positionKeys: []
+  };
+  if (customPieces && Object.keys(customPieces).length > 0) {
+    state.customPieces = customPieces;
+  } else if ("customPieceDef" in layout && layout.customPieceDef) {
+    state.customPiece = layout.customPieceDef;
+    state.customPieces = { [legacyCustomId]: layout.customPieceDef };
+  }
+  state.positionKeys.push(positionKey(state));
+  return state;
+}
+
+/** Swap all instances of `replaces` on the board to X1 and attach the def. */
+function withCustomPiece(state: GameState, def: CustomPieceDef, replaces: PieceType): GameState {
+  const ns = cloneState(state);
+  const legacyCustomId = "legacy-x1";
+  ns.customPiece = def;
+  ns.customPieces = { [legacyCustomId]: def };
+  ns.replaces = replaces;
+  for (let r = 0; r < 8; r++) {
+    for (let f = 0; f < 8; f++) {
+      const p = ns.board[r][f];
+      if (p && p.type === replaces) {
+        ns.board[r][f] = { type: "X1", color: p.color, customId: legacyCustomId };
+      }
+    }
+  }
+  // Recompute positionKey after board change
+  ns.positionKeys = [positionKey(ns)];
+  return ns;
 }
 
 interface GameCtx {
@@ -122,10 +191,13 @@ interface GameCtx {
   updateSetting<K extends keyof Settings>(key: K, value: Settings[K]): void;
 }
 
-/** Returns the bot level if the mode is bot-driven (incl. portal+bot), else null. */
+/** Returns the bot level if the mode is bot-driven (incl. portal+bot, custom+bot), else null. */
 function botLevelOf(m: Mode): number | null {
   if (m.kind === "bot") return m.level;
   if (m.kind === "portal" && typeof m.opponent !== "string" && m.opponent.kind === "bot") {
+    return m.opponent.level;
+  }
+  if (m.kind === "custom" && typeof m.opponent !== "string" && m.opponent.kind === "bot") {
     return m.opponent.level;
   }
   return null;
@@ -414,7 +486,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
               ? 600
               : 400;
         const t0 = performance.now();
-        const move = await chooseBotMove(state, lvl, { allowExternal: mode.kind === "bot" });
+        const hasCustomPieces = Boolean(state.customPiece || (state.customPieces && Object.keys(state.customPieces).length > 0));
+        const move = await chooseBotMove(state, lvl, { allowExternal: mode.kind === "bot" && !hasCustomPieces });
         const elapsed = performance.now() - t0;
         if (elapsed < minThinkMs) {
           await new Promise((r) => setTimeout(r, minThinkMs - elapsed));
@@ -650,9 +723,36 @@ export function GameProvider({ children }: { children: ReactNode }) {
         ? `Bot Lv ${m.level}`
         : m.kind === "portal" && typeof m.opponent !== "string" && m.opponent.kind === "bot"
           ? `Bot Lv ${m.opponent.level}`
-          : "Player 2";
+          : m.kind === "custom" && typeof m.opponent !== "string" && m.opponent.kind === "bot"
+            ? `Bot Lv ${m.opponent.level}`
+            : "Player 2";
     setPlayers({ w: p?.w ?? defaultW, b: p?.b ?? defaultB });
-    const fresh = m.kind === "portal" ? portalInitialState(m.creator, m.portalMax ?? 2) : initialState();
+    // Build initial board state
+    let base: GameState;
+    if (opts?.customGame) {
+      base = customBoardState(opts.customGame);
+      if (m.kind === "portal") {
+        base.portals = { w: [], b: [], max: m.portalMax ?? 2 };
+        base.portalCreators = { w: m.creator, b: m.creator };
+        base.portalAdjacencyRule = false;
+      }
+    } else if (opts?.boardLayout) {
+      base = customBoardState(opts.boardLayout);
+      // Portal mode with custom layout: add portal fields
+      if (m.kind === "portal") {
+        base.portals = { w: [], b: [], max: m.portalMax ?? 2 };
+        base.portalCreators = { w: m.creator, b: m.creator };
+        base.portalAdjacencyRule = false;
+      }
+    } else if (m.kind === "portal") {
+      base = portalInitialState(m.creator, m.portalMax ?? 2);
+    } else {
+      base = initialState();
+    }
+    // For custom mode, X1 pieces are already on the board from the designer
+    const fresh = m.kind === "custom" && !opts?.customGame
+      ? withCustomPiece(base, m.customPiece!, (m as any).replaces ?? "N")
+      : base;
     dispatch({ type: "new", initial: fresh });
     setSelected(null);
     setPaused(false);
@@ -733,14 +833,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [store]);
 
   const updateSetting = useCallback(<K extends keyof Settings>(key: K, value: Settings[K]) => {
-    const updated = cloneStore(store);
+    const updated = cloneStore(storeRef.current);
     updateSettings(updated, { [key]: value } as Partial<Settings>);
     setStore(updated);
     // Keep ref in sync immediately so any synchronous code that runs right
     // after this (e.g. New Game screen's Start button: updateSetting → newGame)
     // sees the freshest settings.
     storeRef.current = updated;
-  }, [store]);
+  }, []);
 
   const recordPuzzleSolved = useCallback((puzzleId: string) => {
     if (!activeProfile) return;
@@ -800,6 +900,10 @@ function isHumanControlledColor(mode: Mode, color: Color): boolean {
   if (mode.kind === "bot") return color === "w";
   if (mode.kind === "portal") {
     if (typeof mode.opponent === "string") return true;
+    return color === "w";
+  }
+  if (mode.kind === "custom") {
+    if (mode.opponent === "two-player") return true;
     return color === "w";
   }
   return true;

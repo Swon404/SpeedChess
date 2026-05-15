@@ -1249,3 +1249,338 @@ section label { display: block; margin: 6px 0; }
   border: 1px solid transparent;
 }
 .puzzle-meta .pill.solved { color: #4ade80; border-color: rgba(74, 222, 128, 0.4); }
+
+/* ============================================================
+   Piece Designer
+   ============================================================ */
+
+.designer-steps {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.designer-step-btn {
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(148,163,184,0.3);
+  background: transparent;
+  color: var(--text, #f1f5f9);
+  cursor: pointer;
+  font-size: 0.9rem;
+  opacity: 0.6;
+}
+.designer-step-btn.active {
+  background: var(--accent, #38bdf8);
+  color: #0f172a;
+  opacity: 1;
+  font-weight: 600;
+  border-color: transparent;
+}
+
+/* Animal grid */
+.animal-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.animal-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border-radius: 10px;
+  border: 2px solid rgba(148,163,184,0.25);
+  background: var(--panel, #1e293b);
+  color: var(--text, #f1f5f9);
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: border-color 0.15s, background 0.15s;
+}
+.animal-btn .animal-icon { font-size: 1.6rem; line-height: 1; }
+.animal-btn:hover { border-color: rgba(148,163,184,0.6); }
+.animal-btn.active {
+  border-color: var(--accent, #38bdf8);
+  background: rgba(56,189,248,0.12);
+}
+
+/* 7×7 Movement grid */
+.mgrid {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 8px 0;
+  user-select: none;
+}
+.mgrid-row {
+  display: flex;
+  gap: 3px;
+}
+.mgrid-cell {
+  width: 38px;
+  height: 38px;
+  border-radius: 6px;
+  border: 1px solid rgba(148,163,184,0.2);
+  background: rgba(148,163,184,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: default;
+  color: var(--text, #f1f5f9);
+  flex-shrink: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+button.mgrid-cell {
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+button.mgrid-cell:hover {
+  border-color: rgba(148,163,184,0.5);
+}
+.mgrid-center {
+  background: rgba(148,163,184,0.18);
+  cursor: default;
+  font-size: 0.85rem;
+}
+
+/* Ring-1 states */
+.mgrid-ring1.mgrid-off   { background: rgba(148,163,184,0.08); }
+.mgrid-ring1.mgrid-step  { background: rgba(56,189,248,0.35); border-color: rgba(56,189,248,0.7); color: #38bdf8; }
+.mgrid-ring1.mgrid-slide { background: rgba(74,222,128,0.30); border-color: rgba(74,222,128,0.7); color: #4ade80; }
+
+/* Outer (leap) states */
+.mgrid-outer.mgrid-off  { background: rgba(148,163,184,0.08); }
+.mgrid-outer.mgrid-leap { background: rgba(251,191,36,0.35);  border-color: rgba(251,191,36,0.7);  color: #fbbf24; }
+
+/* Range row */
+.range-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0;
+  font-size: 0.9rem;
+}
+.range-row input[type=range] { flex: 1; }
+
+/* Movement summary */
+.move-summary {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin: 4px 0 8px;
+  min-height: 1.2em;
+}
+
+/* Saved pieces list */
+.saved-piece-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 4px 0;
+}
+
+/* ============================================================
+   Board Designer
+   ============================================================ */
+
+.board-designer-grid {
+  display: inline-block;
+  border: 2px solid rgba(148,163,184,0.25);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+.board-row {
+  display: flex;
+}
+.board-designer-square {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: outline 0.1s;
+}
+.board-designer-square:hover {
+  outline: 2px solid var(--accent, #38bdf8);
+  outline-offset: -2px;
+  z-index: 1;
+}
+.board-designer-square.picker-active {
+  outline: 3px solid #fbbf24;
+  outline-offset: -3px;
+  z-index: 2;
+}
+.board-designer-mirror {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+/* piece-custom: fills 88% of the square like piece-svg; font-size inherited from .square */
+.piece-custom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 88%;
+  height: 88%;
+  line-height: 1;
+}
+
+/* ============================================================
+   Piece Picker (inline popup)
+   ============================================================ */
+
+.piece-picker-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.piece-picker {
+  background: var(--panel, #1e293b);
+  border: 1px solid rgba(148,163,184,0.35);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 280px;
+  max-width: 90vw;
+}
+.piece-picker-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.picker-cell {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  border: 1px solid rgba(148,163,184,0.3);
+  background: rgba(148,163,184,0.08);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: #94a3b8;
+  transition: background 0.12s, border-color 0.12s;
+  padding: 2px;
+}
+.picker-cell:hover {
+  background: rgba(56,189,248,0.18);
+  border-color: rgba(56,189,248,0.5);
+}
+.picker-cell.picker-empty {
+  color: #f87171;
+  font-size: 1rem;
+}
+.picker-cell.picker-custom {
+  width: auto;
+  min-width: 44px;
+  padding: 4px 6px;
+}
+/* Scale custom piece icon to match standard piece size in the picker */
+.picker-cell .piece-custom {
+  width: 38px;
+  height: 38px;
+  font-size: 38px;
+}
+.picker-label {
+  font-size: 0.6rem;
+  color: #94a3b8;
+  line-height: 1;
+  margin-top: 2px;
+  max-width: 52px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.picker-create-btn {
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 1px dashed rgba(148,163,184,0.4);
+  background: transparent;
+  color: var(--accent, #38bdf8);
+  cursor: pointer;
+  font-size: 0.85rem;
+  width: 100%;
+  text-align: center;
+  transition: background 0.12s;
+}
+.picker-create-btn:hover {
+  background: rgba(56,189,248,0.1);
+}
+
+/* Custom piece preview on New Game screen */
+.custom-piece-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+}
+.custom-piece-icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.custom-piece-summary { font-size: 0.9rem; }
+
+/* text-input (used in designer name fields) */
+.text-input {
+  margin-left: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(148,163,184,0.3);
+  background: var(--panel, #1e293b);
+  color: var(--text, #f1f5f9);
+  font: inherit;
+  font-size: 0.95rem;
+  width: 200px;
+}
+.btn-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.btn-primary {
+  padding: 8px 20px;
+  border-radius: 20px;
+  border: none;
+  background: var(--accent, #38bdf8);
+  color: #0f172a;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-secondary {
+  padding: 8px 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(148,163,184,0.4);
+  background: transparent;
+  color: var(--text, #f1f5f9);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.btn-secondary:disabled { opacity: 0.4; cursor: not-allowed; }
+

@@ -2,11 +2,34 @@
 // Board is an 8x8 array indexed [rank 0..7][file 0..7] where rank 0 is white's back rank.
 
 export type Color = "w" | "b";
-export type PieceType = "P" | "N" | "B" | "R" | "Q" | "K";
+export type PieceType = "P" | "N" | "B" | "R" | "Q" | "K" | "X1";
+
+export type AnimalId =
+  | "camel" | "cat" | "trex" | "dog" | "creeper"
+  | "gd-yellow" | "gd-red" | "dragon" | "lion"
+  | "eagle" | "wolf" | "frog" | "unicorn";
+
+/**
+ * Definition of a custom (X1) piece for Custom Piece Chess mode.
+ * Directions use [fileDelta, rankDelta] convention (same as rules.ts Dir).
+ */
+export interface CustomPieceDef {
+  animal: AnimalId;
+  label: string;
+  /** One-square moves blocked by intervening pieces. */
+  stepDirs: [number, number][];
+  /** Multi-square rays blocked by first piece encountered. Capped at maxRange. */
+  slideDirs: [number, number][];
+  /** Fixed-offset jumps that ignore blocking pieces (like a knight). */
+  leapPatterns: [number, number][];
+  /** Maximum distance for slideDirs rays; 8 = unlimited. */
+  maxRange: number;
+}
 
 export interface Piece {
   type: PieceType;
   color: Color;
+  customId?: string;
 }
 
 export type Square = { file: number; rank: number };
@@ -62,6 +85,12 @@ export interface GameState {
    * adjacent to any other piece. When false/undefined, no adjacency check.
    */
   portalAdjacencyRule?: boolean;
+  /** Custom Piece mode: shared movement definition for X1 pieces. */
+  customPiece?: CustomPieceDef;
+  /** Custom Game mode: per-piece definitions keyed by piece id. */
+  customPieces?: Record<string, CustomPieceDef>;
+  /** Custom Piece mode: which standard piece type was replaced by X1. */
+  replaces?: PieceType;
 }
 
 export const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"] as const;
@@ -86,6 +115,21 @@ export function cloneBoard(board: (Piece | null)[][]): (Piece | null)[][] {
   return board.map((row) => row.map((p) => (p ? { ...p } : null)));
 }
 
+function cloneCustomPieceDef(def: CustomPieceDef): CustomPieceDef {
+  return {
+    ...def,
+    stepDirs: def.stepDirs.slice(),
+    slideDirs: def.slideDirs.slice(),
+    leapPatterns: def.leapPatterns.slice()
+  };
+}
+
+export function customPieceDefFor(state: GameState, piece: Piece | null | undefined): CustomPieceDef | undefined {
+  if (!piece || piece.type !== "X1") return undefined;
+  if (piece.customId && state.customPieces?.[piece.customId]) return state.customPieces[piece.customId];
+  return state.customPiece;
+}
+
 export function cloneState(s: GameState): GameState {
   return {
     board: cloneBoard(s.board),
@@ -105,7 +149,14 @@ export function cloneState(s: GameState): GameState {
         }
       : undefined,
     portalCreators: s.portalCreators ? { ...s.portalCreators } : undefined,
-    portalAdjacencyRule: s.portalAdjacencyRule
+    portalAdjacencyRule: s.portalAdjacencyRule,
+    customPiece: s.customPiece ? cloneCustomPieceDef(s.customPiece) : undefined,
+    customPieces: s.customPieces
+      ? Object.fromEntries(
+          Object.entries(s.customPieces).map(([id, def]) => [id, cloneCustomPieceDef(def)])
+        )
+      : undefined,
+    replaces: s.replaces
   };
 }
 
@@ -144,7 +195,14 @@ export function positionKey(s: GameState): string {
   for (let r = 0; r < 8; r++) {
     for (let f = 0; f < 8; f++) {
       const p = s.board[r][f];
-      b += p ? (p.color === "w" ? p.type : p.type.toLowerCase()) : ".";
+      if (!p) {
+        b += "[.]";
+        continue;
+      }
+      const colorType = p.color === "w" ? p.type : p.type.toLowerCase();
+      b += p.type === "X1"
+        ? `[${colorType}:${p.customId ?? "legacy"}]`
+        : `[${colorType}]`;
     }
   }
   const c =

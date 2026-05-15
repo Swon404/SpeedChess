@@ -1,7 +1,38 @@
-import type { GameState, PieceType } from "./board";
+import type { CustomPieceDef, GameState, PieceType } from "./board";
 
 const KEY = "speedchess.v1";
 const ACTIVE_KEY = "speedchess.v1.active";
+
+export interface SavedCustomPiece {
+  id: string;
+  name: string;
+  def: CustomPieceDef;
+}
+
+export interface SavedCustomSquare {
+  rank: number;
+  file: number;
+  type: PieceType;
+  customPieceId?: string;
+}
+
+export interface SavedBoardLayout {
+  id: string;
+  name: string;
+  /** White's piece placement on ranks 0-3. Black is mirrored automatically. */
+  squares: { rank: number; file: number; type: PieceType }[];
+}
+
+export interface SavedCustomGame {
+  id: string;
+  name: string;
+  /** White's piece placement on ranks 0-3. Black is mirrored automatically. */
+  squares: SavedCustomSquare[];
+  /** Definitions for X1 pieces placed on the board, if any. */
+  customPieces?: SavedCustomPiece[];
+  /** Legacy single-definition support for older saves. */
+  customPieceDef?: CustomPieceDef;
+}
 
 export interface Profile {
   id: string;
@@ -70,6 +101,12 @@ export interface Settings {
   portalCreatorDefault: PieceType;
   portalOpponentDefault: "two-player" | "bot";
   portalMaxDefault: 1 | 2 | 3;
+  savedCustomPieces: SavedCustomPiece[];
+  savedBoardLayouts: SavedBoardLayout[];
+  savedCustomGames: SavedCustomGame[];
+  lastCustomPieceId?: string;
+  lastBoardLayoutId?: string;
+  lastCustomGameId?: string;
 }
 
 export interface SavedGame {
@@ -102,7 +139,10 @@ const DEFAULT_SETTINGS: Settings = {
   explodeOnCapture: false,
   portalCreatorDefault: "N",
   portalOpponentDefault: "bot",
-  portalMaxDefault: 2
+  portalMaxDefault: 2,
+  savedCustomPieces: [],
+  savedBoardLayouts: [],
+  savedCustomGames: []
 };
 
 function normalizePieceSet(value: unknown): PieceSet {
@@ -123,6 +163,38 @@ function normalizePortalOpponent(value: unknown): "two-player" | "bot" {
 function normalizePortalMax(value: unknown): 1 | 2 | 3 {
   if (value === 1 || value === 2 || value === 3) return value;
   return 2;
+}
+
+function normalizeSavedCustomPiece(value: unknown): SavedCustomPiece | null {
+  if (!value || typeof value !== "object") return null;
+  const piece = value as Partial<SavedCustomPiece>;
+  if (typeof piece.id !== "string" || typeof piece.name !== "string" || !piece.def) return null;
+  return piece as SavedCustomPiece;
+}
+
+function normalizeSavedCustomGame(value: unknown): SavedCustomGame | null {
+  if (!value || typeof value !== "object") return null;
+  const game = value as Partial<SavedCustomGame>;
+  if (typeof game.id !== "string" || typeof game.name !== "string" || !Array.isArray(game.squares)) return null;
+  const squares = game.squares
+    .filter((sq): sq is SavedCustomSquare => Boolean(sq && typeof sq === "object"))
+    .map((sq) => ({
+      rank: sq.rank,
+      file: sq.file,
+      type: sq.type,
+      customPieceId: sq.customPieceId
+    }))
+    .filter((sq) => typeof sq.rank === "number" && typeof sq.file === "number" && typeof sq.type === "string");
+  const customPieces = Array.isArray(game.customPieces)
+    ? game.customPieces.map(normalizeSavedCustomPiece).filter((piece): piece is SavedCustomPiece => Boolean(piece))
+    : undefined;
+  return {
+    id: game.id,
+    name: game.name,
+    squares,
+    customPieces,
+    customPieceDef: game.customPieceDef
+  };
 }
 
 function emptyStats(): ProfileStats {
@@ -263,7 +335,14 @@ export function load(): Store {
       pieceSet: normalizePieceSet(rawSettings?.pieceSet),
       portalCreatorDefault: normalizePortalCreator(rawSettings?.portalCreatorDefault),
       portalOpponentDefault: normalizePortalOpponent(rawSettings?.portalOpponentDefault),
-      portalMaxDefault: normalizePortalMax(rawSettings?.portalMaxDefault)
+      portalMaxDefault: normalizePortalMax(rawSettings?.portalMaxDefault),
+      savedCustomPieces: Array.isArray(rawSettings?.savedCustomPieces)
+        ? rawSettings.savedCustomPieces.map(normalizeSavedCustomPiece).filter((piece): piece is SavedCustomPiece => Boolean(piece))
+        : [],
+      savedBoardLayouts: Array.isArray(rawSettings?.savedBoardLayouts) ? rawSettings.savedBoardLayouts : [],
+      savedCustomGames: Array.isArray(rawSettings?.savedCustomGames)
+        ? rawSettings.savedCustomGames.map(normalizeSavedCustomGame).filter((game): game is SavedCustomGame => Boolean(game))
+        : []
     };
     parsed.savedGames = parsed.savedGames ?? {};
     parsed.profiles = (parsed.profiles ?? []).map((profile) => ({
@@ -432,7 +511,8 @@ export interface ActiveSession {
   mode:
     | { kind: "two-player" }
     | { kind: "bot"; level: number }
-    | { kind: "portal"; opponent: "two-player" | { kind: "bot"; level: number }; creator: PieceType; adjacencyRule?: boolean; portalMax?: number };
+    | { kind: "portal"; opponent: "two-player" | { kind: "bot"; level: number }; creator: PieceType; adjacencyRule?: boolean; portalMax?: number }
+    | { kind: "custom"; customPiece?: CustomPieceDef; opponent: "two-player" | { kind: "bot"; level: number } };
   players: { w: string; b: string };
   stack: GameState[]; // full history stack, so Undo still works
   timeLeft: number | null; // null === Infinity (timer off)
@@ -457,4 +537,71 @@ export function saveActiveSession(s: ActiveSession): void {
 
 export function clearActiveSession(): void {
   try { localStorage.removeItem(ACTIVE_KEY); } catch { /* ignore */ }
+}
+
+// ---------------------------------------------------------------------------
+// Custom piece + board layout CRUD
+// ---------------------------------------------------------------------------
+
+export function saveCustomPiece(store: Store, piece: SavedCustomPiece): void {
+  const existing = store.settings.savedCustomPieces.findIndex((p) => p.id === piece.id);
+  if (existing >= 0) {
+    store.settings.savedCustomPieces = store.settings.savedCustomPieces.map((p, i) =>
+      i === existing ? piece : p
+    );
+  } else {
+    store.settings.savedCustomPieces = [...store.settings.savedCustomPieces, piece];
+  }
+  store.settings.lastCustomPieceId = piece.id;
+  save(store);
+}
+
+export function deleteCustomPiece(store: Store, id: string): void {
+  store.settings.savedCustomPieces = store.settings.savedCustomPieces.filter((p) => p.id !== id);
+  if (store.settings.lastCustomPieceId === id) {
+    store.settings.lastCustomPieceId = store.settings.savedCustomPieces[0]?.id;
+  }
+  save(store);
+}
+
+export function saveBoardLayout(store: Store, layout: SavedBoardLayout): void {
+  const existing = store.settings.savedBoardLayouts.findIndex((l) => l.id === layout.id);
+  if (existing >= 0) {
+    store.settings.savedBoardLayouts = store.settings.savedBoardLayouts.map((l, i) =>
+      i === existing ? layout : l
+    );
+  } else {
+    store.settings.savedBoardLayouts = [...store.settings.savedBoardLayouts, layout];
+  }
+  store.settings.lastBoardLayoutId = layout.id;
+  save(store);
+}
+
+export function deleteBoardLayout(store: Store, id: string): void {
+  store.settings.savedBoardLayouts = store.settings.savedBoardLayouts.filter((l) => l.id !== id);
+  if (store.settings.lastBoardLayoutId === id) {
+    store.settings.lastBoardLayoutId = store.settings.savedBoardLayouts[0]?.id;
+  }
+  save(store);
+}
+
+export function saveCustomGame(store: Store, game: SavedCustomGame): void {
+  const existing = store.settings.savedCustomGames.findIndex((g) => g.id === game.id);
+  if (existing >= 0) {
+    store.settings.savedCustomGames = store.settings.savedCustomGames.map((g, i) =>
+      i === existing ? game : g
+    );
+  } else {
+    store.settings.savedCustomGames = [...store.settings.savedCustomGames, game];
+  }
+  store.settings.lastCustomGameId = game.id;
+  save(store);
+}
+
+export function deleteCustomGame(store: Store, id: string): void {
+  store.settings.savedCustomGames = store.settings.savedCustomGames.filter((g) => g.id !== id);
+  if (store.settings.lastCustomGameId === id) {
+    store.settings.lastCustomGameId = store.settings.savedCustomGames[0]?.id;
+  }
+  save(store);
 }

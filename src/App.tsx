@@ -8,6 +8,8 @@ import { LeaderboardScreen } from "./screens/LeaderboardScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
 import { LearnScreen } from "./screens/LearnScreen";
 import { PuzzlesScreen } from "./screens/PuzzlesScreen";
+import { PieceDesignerScreen } from "./screens/PieceDesignerScreen";
+import { BoardDesignerScreen } from "./screens/BoardDesignerScreen";
 
 export default function App() {
   return (
@@ -22,6 +24,8 @@ export default function App() {
           <Route path="/leaderboard" element={<LeaderboardScreen />} />
           <Route path="/learn" element={<LearnScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
+          <Route path="/piece-designer" element={<PieceDesignerScreen />} />
+          <Route path="/board-designer" element={<BoardDesignerScreen />} />
         </Routes>
       </HashRouter>
     </GameProvider>

@@ -3,6 +3,7 @@ import { Move, Piece as PieceT, Square, squareName } from "../engine/board";
 import { allLegalMoves, findKing, inCheck } from "../engine/rules";
 import { playSound } from "../engine/sound";
 import { useGame } from "../GameContext";
+import { customPieceDefFor } from "../engine/board";
 import { Piece } from "./Piece";
 
 function isLegalTarget(legal: Move[], sq: Square): Move | undefined {
@@ -238,6 +239,7 @@ export function Board({ flipped = false }: Props) {
                         type={lastMove.captured}
                         set={pieceSet}
                         rotate={rotateBlackForFixedBoard && capturedColor === "b"}
+                        customPieceDef={undefined}
                       />
                     </span>
                   )}
@@ -256,6 +258,7 @@ export function Board({ flipped = false }: Props) {
                         type={piece.type}
                         set={pieceSet}
                         rotate={rotateBlackForFixedBoard && piece.color === "b"}
+                        customPieceDef={customPieceDefFor(state, piece)}
                       />
                     </span>
                   )}

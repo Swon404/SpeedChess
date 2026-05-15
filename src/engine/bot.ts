@@ -1,13 +1,23 @@
-import { GameState, Move, Piece } from "./board";
+import { customPieceDefFor, GameState, Move, Piece } from "./board";
 import { allLegalMoves, inCheck, makeMove } from "./rules";
 
 const VALUES: Record<string, number> = { P: 100, N: 320, B: 330, R: 500, Q: 900, K: 0 };
+
+function customPieceValueForDef(state: GameState, piece: Piece): number {
+  const def = customPieceDefFor(state, piece);
+  if (!def) return 350;
+  const stepPower = def.stepDirs.length * 30;
+  const slidePower = def.slideDirs.length * Math.min(def.maxRange, 8) * 20;
+  const leapPower = def.leapPatterns.length * 25;
+  return Math.max(250, Math.min(850, Math.round(stepPower + slidePower + leapPower)));
+}
 
 function materialScore(state: GameState, color: "w" | "b"): number {
   let s = 0;
   for (const row of state.board) for (const p of row) {
     if (!p) continue;
-    s += (p.color === color ? 1 : -1) * VALUES[p.type];
+    const v = p.type === "X1" ? customPieceValueForDef(state, p) : (VALUES[p.type] ?? 0);
+    s += (p.color === color ? 1 : -1) * v;
   }
   // Slight mobility bonus
   const moves = allLegalMoves(state).length;

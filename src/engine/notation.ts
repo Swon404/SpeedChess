@@ -1,7 +1,7 @@
 import { allLegalMoves, inCheck, makeMove } from "./rules";
 import { FILES, GameState, Move, squareName } from "./board";
 
-const PIECE_LETTER: Record<string, string> = { N: "N", B: "B", R: "R", Q: "Q", K: "K" };
+const PIECE_LETTER: Record<string, string> = { N: "N", B: "B", R: "R", Q: "Q", K: "K", X1: "Y" };
 
 export function toSAN(state: GameState, move: Move): string {
   if (move.isCastle === "K") return withSuffix(state, move, "O-O");

@@ -62,7 +62,10 @@ function makeStore(): Store {
       explodeOnCapture: false,
       portalCreatorDefault: "N",
       portalOpponentDefault: "bot",
-      portalMaxDefault: 2
+      portalMaxDefault: 2,
+      savedCustomPieces: [],
+      savedBoardLayouts: [],
+      savedCustomGames: []
     },
     savedGames: {}
   };
