@@ -18,6 +18,7 @@ const PIECE_LABEL: Record<string, string> = {
 const LEGACY_CUSTOM_ID = "legacy-x1";
 
 type SquareEntry = { rank: number; file: number; type: PieceType; customPieceId?: string };
+type CustomPieceOption = SavedCustomPiece & { aliasIds: string[] };
 
 type BoardDesignerLocationState = {
   customPieceDef?: CustomPieceDef;
@@ -59,10 +60,35 @@ function clonePiece(piece: SavedCustomPiece): SavedCustomPiece {
   };
 }
 
-function dedupePieces(pieces: SavedCustomPiece[]): SavedCustomPiece[] {
-  const byId = new Map<string, SavedCustomPiece>();
-  for (const piece of pieces) byId.set(piece.id, piece);
-  return [...byId.values()];
+function pieceSignature(piece: SavedCustomPiece): string {
+  const def = piece.def;
+  return JSON.stringify({
+    name: piece.name,
+    animal: def.animal,
+    label: def.label,
+    maxRange: def.maxRange,
+    stepDirs: def.stepDirs,
+    slideDirs: def.slideDirs,
+    leapPatterns: def.leapPatterns,
+  });
+}
+
+function dedupePieces(pieces: SavedCustomPiece[]): CustomPieceOption[] {
+  const bySignature = new Map<string, CustomPieceOption>();
+  for (const originalPiece of pieces) {
+    const piece = clonePiece(originalPiece);
+    const signature = pieceSignature(piece);
+    const existing = bySignature.get(signature);
+    if (!existing) {
+      bySignature.set(signature, { ...piece, aliasIds: [piece.id] });
+      continue;
+    }
+    bySignature.set(signature, {
+      ...piece,
+      aliasIds: Array.from(new Set([...existing.aliasIds, piece.id])),
+    });
+  }
+  return [...bySignature.values()];
 }
 
 function legacyPieceFromDef(def?: CustomPieceDef): SavedCustomPiece[] {
@@ -75,7 +101,7 @@ type PickerChoice =
   | { kind: "empty" };
 
 interface PickerProps {
-  customPieces: SavedCustomPiece[];
+  customPieces: CustomPieceOption[];
   pieceSet: string;
   onPick: (choice: PickerChoice) => void;
   onCreateNew: () => void;
@@ -168,7 +194,7 @@ export function BoardDesignerScreen() {
   const [squares, setSquares] = useState<SquareEntry[]>(initialSquares);
   const [gameName, setGameName] = useState(locState?.gameName ?? "My Custom Game");
   const [editingId, setEditingId] = useState<string | null>(locState?.editingId ?? null);
-  const [boardCustomPieces, setBoardCustomPieces] = useState<SavedCustomPiece[]>(initialCustomPieces);
+  const [boardCustomPieces, setBoardCustomPieces] = useState<SavedCustomPiece[]>(initialCustomPieces.map(({ aliasIds: _aliasIds, ...piece }) => piece));
   const [pickerAt, setPickerAt] = useState<{ rank: number; file: number } | null>(null);
 
   const availableCustomPieces = useMemo(
@@ -179,7 +205,8 @@ export function BoardDesignerScreen() {
   const getAt = (rank: number, file: number) =>
     squares.find((square) => square.rank === rank && square.file === file);
 
-  const customPieceFor = (id?: string) => availableCustomPieces.find((piece) => piece.id === id)?.def;
+  const customPieceOptionFor = (id?: string) => availableCustomPieces.find((piece) => piece.aliasIds.includes(id ?? ""));
+  const customPieceFor = (id?: string) => customPieceOptionFor(id)?.def;
 
   const handlePick = (choice: PickerChoice) => {
     if (!pickerAt) return;
@@ -192,7 +219,10 @@ export function BoardDesignerScreen() {
         { rank, file, type: choice.type },
       ]);
     } else {
-      setBoardCustomPieces((current) => dedupePieces([clonePiece(choice.piece), ...current]));
+      setBoardCustomPieces((current) => {
+        const merged = dedupePieces([clonePiece(choice.piece), ...current]);
+        return merged.map(({ aliasIds: _aliasIds, ...piece }) => piece);
+      });
       setSquares((current) => [
         ...current.filter((square) => !(square.rank === rank && square.file === file)),
         { rank, file, type: "X1", customPieceId: choice.piece.id },
@@ -230,10 +260,13 @@ export function BoardDesignerScreen() {
     const game: SavedCustomGame = {
       id: editingId ?? crypto.randomUUID(),
       name: gameName.trim() || "My Custom Game",
-      squares: squares.map((square) => ({ ...square })),
+      squares: squares.map((square) => ({
+        ...square,
+        customPieceId: square.type === "X1" ? (customPieceOptionFor(square.customPieceId)?.id ?? square.customPieceId) : square.customPieceId,
+      })),
       customPieces: availableCustomPieces
-        .filter((piece) => referencedIds.has(piece.id))
-        .map(clonePiece),
+        .filter((piece) => piece.aliasIds.some((aliasId) => referencedIds.has(aliasId)))
+        .map(({ aliasIds: _aliasIds, ...piece }) => clonePiece(piece)),
     };
     const updated = { ...store, settings: { ...store.settings } };
     saveCustomGame(updated, game);
@@ -257,10 +290,13 @@ export function BoardDesignerScreen() {
     const game: SavedCustomGame = {
       id: crypto.randomUUID(),
       name: gameName.trim() || "Custom",
-      squares: squares.map((square) => ({ ...square })),
+      squares: squares.map((square) => ({
+        ...square,
+        customPieceId: square.type === "X1" ? (customPieceOptionFor(square.customPieceId)?.id ?? square.customPieceId) : square.customPieceId,
+      })),
       customPieces: availableCustomPieces
-        .filter((piece) => referencedIds.has(piece.id))
-        .map(clonePiece),
+        .filter((piece) => piece.aliasIds.some((aliasId) => referencedIds.has(aliasId)))
+        .map(({ aliasIds: _aliasIds, ...piece }) => clonePiece(piece)),
     };
     nav("/new", { state: { customGame: game } });
   };
@@ -276,7 +312,7 @@ export function BoardDesignerScreen() {
         ? loadedCustomPieces[0].id
         : square.customPieceId,
     })));
-    setBoardCustomPieces(loadedCustomPieces);
+    setBoardCustomPieces(loadedCustomPieces.map(({ aliasIds: _aliasIds, ...piece }) => piece));
     setGameName(game.name);
     setEditingId(game.id);
   };
@@ -289,11 +325,13 @@ export function BoardDesignerScreen() {
   };
 
   const handleDeletePiece = (id: string) => {
-    setSquares((current) => current.filter((square) => square.customPieceId !== id));
-    setBoardCustomPieces((current) => current.filter((piece) => piece.id !== id));
-    if (store.settings.savedCustomPieces.some((piece) => piece.id === id)) {
+    const option = customPieceOptionFor(id);
+    const aliasIds = option?.aliasIds ?? [id];
+    setSquares((current) => current.filter((square) => !aliasIds.includes(square.customPieceId ?? "")));
+    setBoardCustomPieces((current) => current.filter((piece) => !aliasIds.includes(piece.id)));
+    if (store.settings.savedCustomPieces.some((piece) => aliasIds.includes(piece.id))) {
       const updated = { ...store, settings: { ...store.settings } };
-      deleteCustomPiece(updated, id);
+      for (const aliasId of aliasIds) deleteCustomPiece(updated, aliasId);
       updateSetting("savedCustomPieces", updated.settings.savedCustomPieces);
       updateSetting("lastCustomPieceId", updated.settings.lastCustomPieceId);
     }

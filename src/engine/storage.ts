@@ -513,6 +513,7 @@ export interface ActiveSession {
     | { kind: "bot"; level: number }
     | { kind: "portal"; opponent: "two-player" | { kind: "bot"; level: number }; creator: PieceType; adjacencyRule?: boolean; portalMax?: number }
     | { kind: "custom"; customPiece?: CustomPieceDef; opponent: "two-player" | { kind: "bot"; level: number } };
+  customGame?: SavedCustomGame | null;
   players: { w: string; b: string };
   stack: GameState[]; // full history stack, so Undo still works
   timeLeft: number | null; // null === Infinity (timer off)

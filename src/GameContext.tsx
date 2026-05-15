@@ -150,6 +150,7 @@ interface GameCtx {
   activeProfile: Profile | null;
   state: GameState;
   mode: Mode;
+  activeCustomGame: SavedCustomGame | null;
   players: Players;
   selected: Square | null;
   legalFromSelected: Move[];
@@ -252,6 +253,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   // Resume any in-progress game from localStorage on first mount.
   const restored = useMemo(() => loadActiveSession(), []);
   const [mode, setMode] = useState<Mode>(restored?.mode ?? { kind: "two-player" });
+  const [activeCustomGame, setActiveCustomGame] = useState<SavedCustomGame | null>(restored?.customGame ?? null);
   const [players, setPlayers] = useState<Players>(restored?.players ?? { w: "White", b: "Black" });
   const [stack, dispatch] = useReducer(
     reducer,
@@ -421,12 +423,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
     saveActiveSession({
       mode,
+      customGame: activeCustomGame,
       players,
       stack,
       timeLeft: Number.isFinite(timeLeft) ? timeLeft : null,
       savedAt: Date.now()
     });
-  }, [stack, mode, players, timeLeft, result.kind]);
+  }, [stack, mode, activeCustomGame, players, timeLeft, result.kind]);
 
   // Reset timer on each turn change (but not on initial mount — we may have
   // just restored a mid-game timeLeft from localStorage).
@@ -753,6 +756,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const fresh = m.kind === "custom" && !opts?.customGame
       ? withCustomPiece(base, m.customPiece!, (m as any).replaces ?? "N")
       : base;
+    setActiveCustomGame(opts?.customGame ?? null);
     dispatch({ type: "new", initial: fresh });
     setSelected(null);
     setPaused(false);
@@ -778,6 +782,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     clearActiveSession();
     noTimerRef.current = !!opts?.noTimer;
     setMode({ kind: "two-player" });
+    setActiveCustomGame(null);
     setPlayers({ w: p?.w ?? "You", b: p?.b ?? "Puzzle" });
     dispatch({ type: "set-state", state: newState });
     setSelected(null);
@@ -859,7 +864,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [store, activeProfile]);
 
   const value: GameCtx = {
-    store, activeProfile, state, mode, players, selected, legalFromSelected, timeLeft, isBotThinking, result,
+    store, activeProfile, state, mode, activeCustomGame, players, selected, legalFromSelected, timeLeft, isBotThinking, result,
     paused, togglePause,
     select, tryMove, lastMoveReplayNonce, replayLastMove, undo, newGame, forfeit,
     loadPosition,

@@ -19,16 +19,26 @@ function slideDurationMs(speed: "normal" | "slow" | "very-slow", isMobile: boole
 }
 
 export function GameScreen() {
-  const { mode, state, store, paused, togglePause, moveFeedback } = useGame();
+  const { mode, state, store, activeCustomGame, paused, togglePause, moveFeedback } = useGame();
   const shouldAutoFlip = mode.kind === "two-player" && store.settings.autoFlip;
   const targetFlipped = shouldAutoFlip && state.turn === "b";
   const [flipped, setFlipped] = useState(targetFlipped);
   const prevHistLenRef = useRef(state.history.length);
-  const coachLabel = mode.kind === "portal" ? "Portal coach" : "Stockfish coach";
+  const hasCustomPieces = Boolean(
+    state.customPiece || (state.customPieces && Object.keys(state.customPieces).length > 0)
+  );
+  const coachLabel =
+    mode.kind === "portal"
+      ? "Portal coach"
+      : mode.kind === "custom" || hasCustomPieces
+        ? "Custom coach"
+        : "Stockfish coach";
   const statusDetail = moveFeedback
     ? `${moveFeedback.playerName}: ${moveFeedback.label} · ${moveFeedback.score}/100`
     : mode.kind === "portal"
-      ? "Portal Chess uses the in-house coach because Stockfish cannot read portals."
+      ? "Portal Chess uses the in-house coach for move feedback."
+      : mode.kind === "custom" || hasCustomPieces
+        ? "Custom games use the in-house coach for move feedback."
       : "Normal chess uses Stockfish to score moves and help you learn.";
 
   useEffect(() => {
@@ -66,7 +76,7 @@ export function GameScreen() {
     <div className="screen game">
       <div className="topbar">
         <Link to="/">← Home</Link>
-        <Link to="/new">New game</Link>
+        <Link to="/new" state={activeCustomGame ? { customGame: activeCustomGame } : undefined}>New game</Link>
         <Link to="/settings">⚙ Settings</Link>
       </div>
       <Clock />
