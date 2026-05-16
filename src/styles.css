@@ -1388,12 +1388,18 @@ button.mgrid-cell:hover {
    Board Designer
    ============================================================ */
 
+.board-designer-scroll-wrap {
+  width: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 4px;
+  margin: 8px 0;
+}
 .board-designer-grid {
   display: inline-block;
   border: 2px solid rgba(148,163,184,0.25);
   border-radius: 4px;
   overflow: hidden;
-  margin: 8px 0;
 }
 .board-row {
   display: flex;
@@ -1467,6 +1473,13 @@ button.mgrid-cell:hover {
 }
 .board-designer-square.has-brush {
   cursor: crosshair;
+}
+@media (max-width: 640px) {
+  .board-designer-square,
+  .board-designer-mirror {
+    min-width: 40px;
+    min-height: 40px;
+  }
 }
 /* piece-custom: fills 88% of the square like piece-svg; font-size inherited from .square */
 .piece-custom {

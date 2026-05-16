@@ -466,12 +466,14 @@ export function BoardDesignerScreen() {
         <p className="hint">Custom boards can now be sized from 4x4 up to 20x20. Odd heights leave a neutral middle rank empty.</p>
 
         <div
+          className="board-designer-scroll-wrap"
+          style={{ touchAction: activeBrush ? "none" : undefined }}
+        >
+        <div
           className={`board-designer-grid board-theme-${theme}`}
           style={{
             position: "relative",
-            aspectRatio: `${boardWidth} / ${boardHeight}`,
             ["--designer-cell-size" as string]: `${designerCellSize}px`,
-            touchAction: activeBrush ? "none" : undefined,
           }}
           onPointerDown={() => { if (activeBrush) isPaintingRef.current = true; }}
           onPointerMove={(e) => {
@@ -556,6 +558,7 @@ export function BoardDesignerScreen() {
               })}
             </div>
           ))}
+        </div>
         </div>
 
         {activeBrush && (
