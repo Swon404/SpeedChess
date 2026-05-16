@@ -81,32 +81,35 @@ function portalInitialState(creator: PieceType, portalMax = 2): GameState {
 
 /** Build an initial state from a saved board layout or custom game (white mirrored to black). */
 function customBoardState(layout: SavedBoardLayout | SavedCustomGame): GameState {
+  const width = Math.max(4, Math.min(20, Math.round(layout.width ?? 8)));
+  const height = Math.max(4, Math.min(20, Math.round(layout.height ?? 8)));
+  const editableRanks = Math.floor(height / 2);
   const empty: (import("./engine/board").Piece | null)[][] =
-    Array.from({ length: 8 }, () => Array(8).fill(null));
+    Array.from({ length: height }, () => Array(width).fill(null));
   const customPieces = "customPieces" in layout && Array.isArray(layout.customPieces)
     ? Object.fromEntries(layout.customPieces.map((piece) => [piece.id, piece.def]))
     : undefined;
   const legacyCustomId = "legacy-x1";
   for (const square of layout.squares) {
     const { rank, file, type } = square;
-    if (rank < 0 || rank > 3 || file < 0 || file > 7) continue;
+    if (rank < 0 || rank >= editableRanks || file < 0 || file >= width) continue;
     const customId =
       type === "X1"
         ? (("customPieceId" in square && square.customPieceId) || (("customPieceDef" in layout && layout.customPieceDef) ? legacyCustomId : undefined))
         : undefined;
     empty[rank][file] = { type, color: "w", customId };
-    empty[7 - rank][file] = { type, color: "b", customId };
+    empty[height - 1 - rank][file] = { type, color: "b", customId };
   }
   const wKok = empty[0][4]?.type === "K" && empty[0][4]?.color === "w";
-  const bKok = empty[7][4]?.type === "K" && empty[7][4]?.color === "b";
+  const bKok = empty[height - 1][4]?.type === "K" && empty[height - 1][4]?.color === "b";
   const state: GameState = {
     board: empty,
     turn: "w",
     castling: {
-      wK: wKok && empty[0][7]?.type === "R",
-      wQ: wKok && empty[0][0]?.type === "R",
-      bK: bKok && empty[7][7]?.type === "R",
-      bQ: bKok && empty[7][0]?.type === "R"
+      wK: width >= 8 && wKok && empty[0][width - 1]?.type === "R",
+      wQ: width >= 8 && wKok && empty[0][0]?.type === "R",
+      bK: width >= 8 && bKok && empty[height - 1][width - 1]?.type === "R",
+      bQ: width >= 8 && bKok && empty[height - 1][0]?.type === "R"
     },
     enPassant: null,
     halfmove: 0,
@@ -132,8 +135,8 @@ function withCustomPiece(state: GameState, def: CustomPieceDef, replaces: PieceT
   ns.customPiece = def;
   ns.customPieces = { [legacyCustomId]: def };
   ns.replaces = replaces;
-  for (let r = 0; r < 8; r++) {
-    for (let f = 0; f < 8; f++) {
+  for (let r = 0; r < ns.board.length; r++) {
+    for (let f = 0; f < (ns.board[r]?.length ?? 0); f++) {
       const p = ns.board[r][f];
       if (p && p.type === replaces) {
         ns.board[r][f] = { type: "X1", color: p.color, customId: legacyCustomId };

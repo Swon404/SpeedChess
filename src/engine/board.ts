@@ -93,22 +93,33 @@ export interface GameState {
   replaces?: PieceType;
 }
 
-export const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"] as const;
+export const FILES = Array.from({ length: 26 }, (_, index) => String.fromCharCode(97 + index));
+
+export function boardHeight(state: GameState | (Piece | null)[][]): number {
+  return Array.isArray(state) ? state.length : state.board.length;
+}
+
+export function boardWidth(state: GameState | (Piece | null)[][]): number {
+  const board = Array.isArray(state) ? state : state.board;
+  return board[0]?.length ?? 0;
+}
 
 export function sqEq(a: Square, b: Square): boolean {
   return a.file === b.file && a.rank === b.rank;
 }
 
-export function inBounds(s: Square): boolean {
-  return s.file >= 0 && s.file < 8 && s.rank >= 0 && s.rank < 8;
+export function inBounds(s: Square, state?: GameState | (Piece | null)[][]): boolean {
+  const width = state ? boardWidth(state) : 8;
+  const height = state ? boardHeight(state) : 8;
+  return s.file >= 0 && s.file < width && s.rank >= 0 && s.rank < height;
 }
 
 export function squareName(s: Square): string {
-  return `${FILES[s.file]}${s.rank + 1}`;
+  return `${FILES[s.file] ?? "?"}${s.rank + 1}`;
 }
 
 export function parseSquare(name: string): Square {
-  return { file: name.charCodeAt(0) - 97, rank: parseInt(name[1], 10) - 1 };
+  return { file: name.charCodeAt(0) - 97, rank: parseInt(name.slice(1), 10) - 1 };
 }
 
 export function cloneBoard(board: (Piece | null)[][]): (Piece | null)[][] {
@@ -192,8 +203,10 @@ export function initialState(): GameState {
  */
 export function positionKey(s: GameState): string {
   let b = "";
-  for (let r = 0; r < 8; r++) {
-    for (let f = 0; f < 8; f++) {
+  const height = boardHeight(s);
+  const width = boardWidth(s);
+  for (let r = 0; r < height; r++) {
+    for (let f = 0; f < width; f++) {
       const p = s.board[r][f];
       if (!p) {
         b += "[.]";
@@ -222,11 +235,11 @@ export function positionKey(s: GameState): string {
             .join(",");
     portalKey = `|P${enc(s.portals.w)};${enc(s.portals.b)}`;
   }
-  return `${b}|${s.turn}|${c}|${ep}${portalKey}`;
+  return `${b}|${width}x${height}|${s.turn}|${c}|${ep}${portalKey}`;
 }
 
 export function pieceAt(state: GameState, sq: Square): Piece | null {
-  if (!inBounds(sq)) return null;
+  if (!inBounds(sq, state)) return null;
   return state.board[sq.rank][sq.file];
 }
 

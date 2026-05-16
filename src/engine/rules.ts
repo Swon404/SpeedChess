@@ -1,4 +1,6 @@
 import {
+  boardHeight,
+  boardWidth,
   Color,
   cloneState,
   customPieceDefFor,
@@ -59,8 +61,8 @@ export function teleportTargets(
   if (!sqEq(fromSq, portalSq)) return [];
   const out: Square[] = [];
   const portalCol = sqColor(portalSq);
-  for (let r = 0; r < 8; r++) {
-    for (let f = 0; f < 8; f++) {
+  for (let r = 0; r < boardHeight(state); r++) {
+    for (let f = 0; f < boardWidth(state); f++) {
       const sq = { file: f, rank: r };
       if (sqEq(sq, portalSq)) continue; // can't stay on portal
       if (state.board[r][f]) continue;
@@ -86,7 +88,7 @@ function teleportIsAdjacentToPiece(
     for (let df = -1; df <= 1; df++) {
       if (dr === 0 && df === 0) continue;
       const nb = { file: target.file + df, rank: target.rank + dr };
-      if (!inBounds(nb)) continue;
+      if (!inBounds(nb, state)) continue;
       if (isExempt(nb)) continue;
       if (state.board[nb.rank][nb.file]) return true;
     }
@@ -102,7 +104,7 @@ function slidingMoves(state: GameState, from: Square, dirs: Dir[], piece: Piece)
   const out: Move[] = [];
   for (const d of dirs) {
     let cur = add(from, d);
-    while (inBounds(cur)) {
+    while (inBounds(cur, state)) {
       const target = pieceAt(state, cur);
       if (!target) {
         out.push({ from, to: cur, piece: piece.type, color: piece.color });
@@ -122,7 +124,7 @@ function stepMoves(state: GameState, from: Square, dirs: Dir[], piece: Piece): M
   const out: Move[] = [];
   for (const d of dirs) {
     const to = add(from, d);
-    if (!inBounds(to)) continue;
+    if (!inBounds(to, state)) continue;
     const target = pieceAt(state, to);
     if (!target) out.push({ from, to, piece: piece.type, color: piece.color });
     else if (target.color !== piece.color) {
@@ -135,21 +137,22 @@ function stepMoves(state: GameState, from: Square, dirs: Dir[], piece: Piece): M
 function pawnMoves(state: GameState, from: Square, piece: Piece): Move[] {
   const out: Move[] = [];
   const dir = piece.color === "w" ? 1 : -1;
-  const startRank = piece.color === "w" ? 1 : 6;
-  const promoRank = piece.color === "w" ? 7 : 0;
+  const height = boardHeight(state);
+  const startRank = piece.color === "w" ? 1 : height - 2;
+  const promoRank = piece.color === "w" ? height - 1 : 0;
   const oneStep = { file: from.file, rank: from.rank + dir };
-  if (inBounds(oneStep) && !pieceAt(state, oneStep)) {
+  if (inBounds(oneStep, state) && !pieceAt(state, oneStep)) {
     pushPawn(out, from, oneStep, piece, promoRank);
     if (from.rank === startRank) {
       const twoStep = { file: from.file, rank: from.rank + 2 * dir };
-      if (!pieceAt(state, twoStep)) {
+      if (inBounds(twoStep, state) && !pieceAt(state, twoStep)) {
         out.push({ from, to: twoStep, piece: "P", color: piece.color });
       }
     }
   }
   for (const df of [-1, 1]) {
     const cap = { file: from.file + df, rank: from.rank + dir };
-    if (!inBounds(cap)) continue;
+    if (!inBounds(cap, state)) continue;
     const target = pieceAt(state, cap);
     if (target && target.color !== piece.color) {
       pushPawn(out, from, cap, piece, promoRank, target.type);
@@ -180,7 +183,7 @@ function customPieceMoves(state: GameState, from: Square, def: CustomPieceDef, p
   // Leaps: jump to fixed offsets ignoring blocking pieces
   for (const [df, dr] of def.leapPatterns) {
     const to = { file: from.file + df, rank: from.rank + dr };
-    if (!inBounds(to)) continue;
+    if (!inBounds(to, state)) continue;
     const target = pieceAt(state, to);
     if (!target) out.push({ from, to, piece: piece.type, color: piece.color });
     else if (target.color !== piece.color)
@@ -189,18 +192,18 @@ function customPieceMoves(state: GameState, from: Square, def: CustomPieceDef, p
   // Steps: one-square moves blocked by pieces
   for (const [df, dr] of def.stepDirs) {
     const to = { file: from.file + df, rank: from.rank + dr };
-    if (!inBounds(to)) continue;
+    if (!inBounds(to, state)) continue;
     const target = pieceAt(state, to);
     if (!target) out.push({ from, to, piece: piece.type, color: piece.color });
     else if (target.color !== piece.color)
       out.push({ from, to, piece: piece.type, color: piece.color, captured: target.type });
   }
   // Slides: multi-square rays capped at maxRange
-  const cap = Math.min(def.maxRange, 8);
+  const cap = Math.min(def.maxRange, Math.max(boardWidth(state), boardHeight(state)));
   for (const [df, dr] of def.slideDirs) {
     let cur = { file: from.file + df, rank: from.rank + dr };
     let steps = 0;
-    while (inBounds(cur) && steps < cap) {
+    while (inBounds(cur, state) && steps < cap) {
       steps++;
       const target = pieceAt(state, cur);
       if (!target) {
@@ -228,8 +231,14 @@ export function pseudoMovesFrom(state: GameState, from: Square): Move[] {
     case "K": {
       const base = stepMoves(state, from, KING_DIRS, p);
       // Castling
-      const rank = p.color === "w" ? 0 : 7;
-      if (from.rank === rank && from.file === 4 && !isSquareAttacked(state, from, opposite(p.color))) {
+      const rank = p.color === "w" ? 0 : boardHeight(state) - 1;
+      const rookFile = boardWidth(state) - 1;
+      if (
+        boardWidth(state) >= 8 &&
+        from.rank === rank &&
+        from.file === 4 &&
+        !isSquareAttacked(state, from, opposite(p.color))
+      ) {
         const kSide = p.color === "w" ? state.castling.wK : state.castling.bK;
         const qSide = p.color === "w" ? state.castling.wQ : state.castling.bQ;
         if (kSide
@@ -237,7 +246,7 @@ export function pseudoMovesFrom(state: GameState, from: Square): Move[] {
           && !pieceAt(state, { file: 6, rank })
           && !isSquareAttacked(state, { file: 5, rank }, opposite(p.color))
           && !isSquareAttacked(state, { file: 6, rank }, opposite(p.color))
-          && pieceAt(state, { file: 7, rank })?.type === "R") {
+          && pieceAt(state, { file: rookFile, rank })?.type === "R") {
           base.push({ from, to: { file: 6, rank }, piece: "K", color: p.color, isCastle: "K" });
         }
         if (qSide
@@ -283,7 +292,7 @@ export function isSquareAttacked(state: GameState, sq: Square, by: Color): boole
   // Sliders
   for (const d of BISHOP_DIRS) {
     let cur = add(sq, d);
-    while (inBounds(cur)) {
+    while (inBounds(cur, state)) {
       const p = pieceAt(state, cur);
       if (p) {
         if (p.color === by && (p.type === "B" || p.type === "Q")) return true;
@@ -294,7 +303,7 @@ export function isSquareAttacked(state: GameState, sq: Square, by: Color): boole
   }
   for (const d of ROOK_DIRS) {
     let cur = add(sq, d);
-    while (inBounds(cur)) {
+    while (inBounds(cur, state)) {
       const p = pieceAt(state, cur);
       if (p) {
         if (p.color === by && (p.type === "R" || p.type === "Q")) return true;
@@ -304,8 +313,8 @@ export function isSquareAttacked(state: GameState, sq: Square, by: Color): boole
     }
   }
   // Custom piece (X1) - each X1 can now have its own definition.
-  for (let rank = 0; rank < 8; rank++) {
-    for (let file = 0; file < 8; file++) {
+  for (let rank = 0; rank < boardHeight(state); rank++) {
+    for (let file = 0; file < boardWidth(state); file++) {
       const from = { file, rank };
       const p = pieceAt(state, from);
       if (!p || p.color !== by || p.type !== "X1") continue;
@@ -318,7 +327,7 @@ export function isSquareAttacked(state: GameState, sq: Square, by: Color): boole
 }
 
 export function findKing(state: GameState, color: Color): Square | null {
-  for (let r = 0; r < 8; r++) for (let f = 0; f < 8; f++) {
+  for (let r = 0; r < boardHeight(state); r++) for (let f = 0; f < boardWidth(state); f++) {
     const p = state.board[r][f];
     if (p && p.type === "K" && p.color === color) return { file: f, rank: r };
   }
@@ -349,10 +358,11 @@ export function makeMove(state: GameState, move: Move): GameState {
 
   // Castling: move the rook
   if (move.isCastle) {
-    const rank = piece.color === "w" ? 0 : 7;
+    const rank = piece.color === "w" ? 0 : boardHeight(state) - 1;
+    const rookFile = boardWidth(state) - 1;
     if (move.isCastle === "K") {
-      ns.board[rank][5] = ns.board[rank][7];
-      ns.board[rank][7] = null;
+      ns.board[rank][5] = ns.board[rank][rookFile];
+      ns.board[rank][rookFile] = null;
     } else {
       ns.board[rank][3] = ns.board[rank][0];
       ns.board[rank][0] = null;
@@ -406,19 +416,19 @@ export function makeMove(state: GameState, move: Move): GameState {
   if (piece.type === "R") {
     if (piece.color === "w" && move.from.rank === 0) {
       if (move.from.file === 0) ns.castling.wQ = false;
-      if (move.from.file === 7) ns.castling.wK = false;
+      if (move.from.file === boardWidth(state) - 1) ns.castling.wK = false;
     }
-    if (piece.color === "b" && move.from.rank === 7) {
+    if (piece.color === "b" && move.from.rank === boardHeight(state) - 1) {
       if (move.from.file === 0) ns.castling.bQ = false;
-      if (move.from.file === 7) ns.castling.bK = false;
+      if (move.from.file === boardWidth(state) - 1) ns.castling.bK = false;
     }
   }
   // Captured rook on its home square removes rights
   if (move.captured === "R") {
     if (move.to.rank === 0 && move.to.file === 0) ns.castling.wQ = false;
-    if (move.to.rank === 0 && move.to.file === 7) ns.castling.wK = false;
-    if (move.to.rank === 7 && move.to.file === 0) ns.castling.bQ = false;
-    if (move.to.rank === 7 && move.to.file === 7) ns.castling.bK = false;
+    if (move.to.rank === 0 && move.to.file === boardWidth(state) - 1) ns.castling.wK = false;
+    if (move.to.rank === boardHeight(state) - 1 && move.to.file === 0) ns.castling.bQ = false;
+    if (move.to.rank === boardHeight(state) - 1 && move.to.file === boardWidth(state) - 1) ns.castling.bK = false;
   }
 
   // En passant target
@@ -512,7 +522,7 @@ export function legalMovesFrom(state: GameState, from: Square): Move[] {
 
 export function allLegalMoves(state: GameState): Move[] {
   const out: Move[] = [];
-  for (let r = 0; r < 8; r++) for (let f = 0; f < 8; f++) {
+  for (let r = 0; r < boardHeight(state); r++) for (let f = 0; f < boardWidth(state); f++) {
     const p = state.board[r][f];
     if (!p || p.color !== state.turn) continue;
     out.push(...legalMovesFrom(state, { file: f, rank: r }));

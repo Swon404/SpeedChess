@@ -198,7 +198,7 @@ section label { display: block; margin: 6px 0; }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: min(9vw, 48px);
+  font-size: var(--square-font-size, min(9vw, 48px));
   line-height: 1;
   border-radius: 0;
 }
@@ -1398,8 +1398,8 @@ button.mgrid-cell:hover {
   display: flex;
 }
 .board-designer-square {
-  width: 34px;
-  height: 34px;
+  width: var(--designer-cell-size, 34px);
+  height: var(--designer-cell-size, 34px);
   padding: 0;
   border: none;
   cursor: pointer;
@@ -1420,12 +1420,26 @@ button.mgrid-cell:hover {
   z-index: 2;
 }
 .board-designer-mirror {
-  width: 34px;
-  height: 34px;
+  width: var(--designer-cell-size, 34px);
+  height: var(--designer-cell-size, 34px);
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: none;
+}
+.board-size-row {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+  flex-wrap: wrap;
+  margin: 8px 0 10px;
+}
+.board-size-row label {
+  display: grid;
+  gap: 4px;
+}
+.board-size-row .text-input {
+  width: 96px;
 }
 /* piece-custom: fills 88% of the square like piece-svg; font-size inherited from .square */
 .piece-custom {

@@ -11,7 +11,7 @@ export function toSAN(state: GameState, move: Move): string {
   let core = "";
 
   if (piece === "P") {
-    if (move.captured) core += FILES[move.from.file] + "x";
+    if (move.captured) core += (FILES[move.from.file] ?? "?") + "x";
     core += squareName(move.to);
     if (move.promotion) core += "=" + move.promotion;
   } else {
@@ -27,7 +27,7 @@ export function toSAN(state: GameState, move: Move): string {
     if (candidates.length) {
       const sameFile = candidates.some((c) => c.from.file === move.from.file);
       const sameRank = candidates.some((c) => c.from.rank === move.from.rank);
-      if (!sameFile) core += FILES[move.from.file];
+      if (!sameFile) core += FILES[move.from.file] ?? "?";
       else if (!sameRank) core += String(move.from.rank + 1);
       else core += squareName(move.from);
     }

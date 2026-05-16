@@ -21,6 +21,8 @@ export interface SavedBoardLayout {
   name: string;
   /** White's piece placement on ranks 0-3. Black is mirrored automatically. */
   squares: { rank: number; file: number; type: PieceType }[];
+  width?: number;
+  height?: number;
 }
 
 export interface SavedCustomGame {
@@ -28,6 +30,8 @@ export interface SavedCustomGame {
   name: string;
   /** White's piece placement on ranks 0-3. Black is mirrored automatically. */
   squares: SavedCustomSquare[];
+  width?: number;
+  height?: number;
   /** Definitions for X1 pieces placed on the board, if any. */
   customPieces?: SavedCustomPiece[];
   /** Legacy single-definition support for older saves. */
@@ -192,6 +196,8 @@ function normalizeSavedCustomGame(value: unknown): SavedCustomGame | null {
     id: game.id,
     name: game.name,
     squares,
+    width: typeof game.width === "number" ? Math.max(4, Math.min(20, Math.round(game.width))) : 8,
+    height: typeof game.height === "number" ? Math.max(4, Math.min(20, Math.round(game.height))) : 8,
     customPieces,
     customPieceDef: game.customPieceDef
   };

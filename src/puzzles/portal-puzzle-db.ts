@@ -147,86 +147,6 @@ function isLight(s: string): boolean {
   return (sq.file + sq.rank) % 2 === 1;
 }
 
-const GENERIC_THEMES = new Set(["portal", "queen", "rook", "bishop", "knight", "mateIn1", "mateIn2"]);
-
-function candidateKey(c: RawCandidate): string {
-  return `${c.fen}|${c.wPortal ?? "-"}|${c.bPortal ?? "-"}|${c.moves.join(",")}`;
-}
-
-function motifOf(c: RawCandidate): string {
-  return c.themes.find((t) => !GENERIC_THEMES.has(t)) ?? "misc";
-}
-
-function spreadPick<T>(items: T[], count: number): T[] {
-  if (count <= 0 || items.length === 0) return [];
-  if (items.length <= count) return items.slice();
-  if (count === 1) return [items[Math.floor(items.length / 2)]];
-  const out: T[] = [];
-  for (let i = 0; i < count; i++) {
-    const idx = Math.round((i * (items.length - 1)) / (count - 1));
-    out.push(items[idx]);
-  }
-  return out;
-}
-
-function curateCandidates(valid: RawCandidate[], targetCount = 20): RawCandidate[] {
-  if (valid.length <= targetCount) return valid.slice();
-
-  const quotas: Record<string, number> = {
-    captureThenWarp: 5,
-    anastasia: 4,
-    "smothered-h6": 2,
-    "smothered-a6": 2,
-    rookLiftWhite: 4,
-    rookLiftBlack: 3,
-  };
-
-  const byMotif = new Map<string, RawCandidate[]>();
-  for (const c of valid) {
-    const motif = motifOf(c);
-    const arr = byMotif.get(motif) ?? [];
-    arr.push(c);
-    byMotif.set(motif, arr);
-  }
-  for (const arr of byMotif.values()) {
-    arr.sort((a, b) => candidateKey(a).localeCompare(candidateKey(b)));
-  }
-
-  const picked: RawCandidate[] = [];
-  const used = new Set<string>();
-  const take = (arr: RawCandidate[], n: number) => {
-    for (const c of spreadPick(arr, n)) {
-      const key = candidateKey(c);
-      if (used.has(key)) continue;
-      used.add(key);
-      picked.push(c);
-    }
-  };
-
-  for (const [motif, quota] of Object.entries(quotas)) {
-    const arr = byMotif.get(motif);
-    if (!arr || arr.length === 0 || quota <= 0) continue;
-    take(arr, Math.min(quota, arr.length));
-  }
-
-  if (picked.length < targetCount) {
-    const rest = valid.slice().sort((a, b) => {
-      const motifCmp = motifOf(a).localeCompare(motifOf(b));
-      if (motifCmp !== 0) return motifCmp;
-      return candidateKey(a).localeCompare(candidateKey(b));
-    });
-    for (const c of rest) {
-      if (picked.length >= targetCount) break;
-      const key = candidateKey(c);
-      if (used.has(key)) continue;
-      used.add(key);
-      picked.push(c);
-    }
-  }
-
-  return picked.slice(0, targetCount);
-}
-
 // ── pattern generators ──────────────────────────────────────────────────────
 
 /**
@@ -445,72 +365,6 @@ function genCaptureThenWarp(): RawCandidate[] {
   return out;
 }
 
-/**
- * Pattern E — "Rook lift" (white to move).
- *
- * Black king is boxed on g8 by pawns f7/g7/h7. White rook stands on its own
- * portal and teleports to e8 for immediate back-rank mate.
- */
-function genRookLiftWhite(): RawCandidate[] {
-  const out: RawCandidate[] = [];
-  const fixed: Record<string, string> = {
-    "g8": "k",
-    "f7": "p",
-    "g7": "p",
-    "h7": "p",
-    "a1": "K",
-  };
-  const rookPortals = [
-    "b1", "c1", "d1", "e1", "f1", "h1",
-    "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2",
-  ];
-  for (const portal of rookPortals) {
-    const pieces = { ...fixed, [portal]: "R" };
-    const fen = `${fenPlacement(pieces)} w - -`;
-    out.push({
-      fen,
-      wPortal: portal,
-      bPortal: null,
-      moves: [`${portal}e8`],
-      themes: ["portal", "rook", "rookLiftWhite", "mateIn1"],
-    });
-  }
-  return out;
-}
-
-/**
- * Pattern F — "Rook lift" mirror (black to move).
- *
- * White king is boxed on g1 by pawns f2/g2/h2. Black rook stands on its own
- * portal and teleports to e1 for immediate back-rank mate.
- */
-function genRookLiftBlack(): RawCandidate[] {
-  const out: RawCandidate[] = [];
-  const fixed: Record<string, string> = {
-    "a8": "k",
-    "g1": "K",
-    "f2": "P",
-    "g2": "P",
-    "h2": "P",
-  };
-  const rookPortals = [
-    "b8", "c8", "d8", "e8", "f8", "h8",
-    "a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7",
-  ];
-  for (const portal of rookPortals) {
-    const pieces = { ...fixed, [portal]: "r" };
-    const fen = `${fenPlacement(pieces)} b - -`;
-    out.push({
-      fen,
-      wPortal: null,
-      bPortal: portal,
-      moves: [`${portal}e1`],
-      themes: ["portal", "rook", "rookLiftBlack", "mateIn1"],
-    });
-  }
-  return out;
-}
-
 // ── build ───────────────────────────────────────────────────────────────────
 
 function build(): PortalPuzzleRow[] {
@@ -521,22 +375,11 @@ function build(): PortalPuzzleRow[] {
     ...genKnightSmotherG(),
     ...genKnightSmotherB(),
     ...genCaptureThenWarp(),
-    ...genRookLiftWhite(),
-    ...genRookLiftBlack(),
   ];
-
-  const validCandidates: RawCandidate[] = [];
-  for (const c of candidates) {
-    if (!validate(c)) continue;
-    validCandidates.push(c);
-  }
-
-  // Keep the portal set intentionally compact and varied.
-  const curated = curateCandidates(validCandidates, 20);
-
   const valid: PortalPuzzleRow[] = [];
   let n = 1;
-  for (const c of curated) {
+  for (const c of candidates) {
+    if (!validate(c)) continue;
     valid.push({
       id: `PP${String(n).padStart(3, "0")}`,
       fen: c.fen,

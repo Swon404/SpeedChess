@@ -1,4 +1,4 @@
-import { customPieceDefFor, GameState, Move, Piece } from "./board";
+import { boardHeight, boardWidth, customPieceDefFor, GameState, Move, Piece } from "./board";
 import { allLegalMoves, inCheck, makeMove } from "./rules";
 
 const VALUES: Record<string, number> = { P: 100, N: 320, B: 330, R: 500, Q: 900, K: 0 };
@@ -89,7 +89,11 @@ export async function chooseBotMove(state: GameState, level: number, opts?: BotO
   if (moves.length === 0) return null;
   const me = state.turn;
   const normalizedLevel = Math.max(1, Math.min(20, Math.round(level)));
-  const canUseExternal = opts?.allowExternal !== false && !state.portals;
+  const canUseExternal =
+    opts?.allowExternal !== false &&
+    !state.portals &&
+    boardWidth(state) === 8 &&
+    boardHeight(state) === 8;
 
   if (canUseExternal && normalizedLevel >= 6) {
     try {

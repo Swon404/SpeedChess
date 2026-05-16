@@ -1,5 +1,5 @@
 import { CSSProperties, useLayoutEffect, useMemo, useState } from "react";
-import { Move, Piece as PieceT, Square, squareName } from "../engine/board";
+import { boardHeight, boardWidth, Move, Piece as PieceT, Square, squareName } from "../engine/board";
 import { allLegalMoves, findKing, inCheck } from "../engine/rules";
 import { playSound } from "../engine/sound";
 import { useGame } from "../GameContext";
@@ -56,9 +56,11 @@ export function Board({ flipped = false }: Props) {
   const [pending, setPending] = useState<PendingPromo | null>(null);
   const [isAnimatingLastMove, setIsAnimatingLastMove] = useState(false);
   const [showCaptureBoom, setShowCaptureBoom] = useState(false);
-
-  const ranks = flipped ? [0, 1, 2, 3, 4, 5, 6, 7] : [7, 6, 5, 4, 3, 2, 1, 0];
-  const files = flipped ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
+  const rankCount = boardHeight(state);
+  const fileCount = boardWidth(state);
+  const ranks = Array.from({ length: rankCount }, (_, index) => flipped ? index : rankCount - 1 - index);
+  const files = Array.from({ length: fileCount }, (_, index) => flipped ? fileCount - 1 - index : index);
+  const squareFontSize = Math.max(12, Math.min(48, Math.floor(420 / Math.max(rankCount, fileCount))));
 
   const onSquareClick = (sq: Square) => {
     if (result.kind !== "ongoing") return;
@@ -151,7 +153,13 @@ export function Board({ flipped = false }: Props) {
 
   return (
     <>
-      <div className={`board board-theme-${theme} piece-set-${pieceSet} anim-speed-${animationSpeed}`}>
+      <div
+        className={`board board-theme-${theme} piece-set-${pieceSet} anim-speed-${animationSpeed}`}
+        style={{
+          aspectRatio: `${fileCount} / ${rankCount}`,
+          ["--square-font-size" as string]: `${squareFontSize}px`
+        }}
+      >
         {ranks.map((r) => (
           <div key={r} className="board-row">
             {files.map((f) => {

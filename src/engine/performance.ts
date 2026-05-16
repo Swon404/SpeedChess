@@ -1,4 +1,4 @@
-import { opposite, type Color, type GameState, type Move } from "./board";
+import { boardHeight, boardWidth, opposite, type Color, type GameState, type Move } from "./board";
 import { stockfishAnalyzePosition, stockfishMoveFromUci, type StockfishAnalysis } from "./bot/stockfish";
 import { materialScore } from "./bot";
 import { allLegalMoves, gameResult, inCheck, isSquareAttacked, makeMove } from "./rules";
@@ -52,24 +52,28 @@ function clampGrade(value: number): MoveGrade {
 
 function pieceDevelopmentBonus(state: GameState, color: Color): number {
   let score = 0;
-  const homeRank = color === "w" ? 0 : 7;
-  const pawnRank = color === "w" ? 1 : 6;
+  const width = boardWidth(state);
+  const height = boardHeight(state);
+  const centerFile = (width - 1) / 2;
+  const centerRank = (height - 1) / 2;
+  const homeRank = color === "w" ? 0 : height - 1;
+  const pawnRank = color === "w" ? 1 : height - 2;
 
-  for (let rank = 0; rank < 8; rank++) {
-    for (let file = 0; file < 8; file++) {
+  for (let rank = 0; rank < height; rank++) {
+    for (let file = 0; file < width; file++) {
       const piece = state.board[rank][file];
       if (!piece || piece.color !== color) continue;
 
-      const distanceFromCenter = Math.abs(3.5 - file) + Math.abs(3.5 - rank);
+      const distanceFromCenter = Math.abs(centerFile - file) + Math.abs(centerRank - rank);
       if ((piece.type === "N" || piece.type === "B") && rank !== homeRank) {
         score += 22;
         score += Math.max(0, 8 - distanceFromCenter * 2);
       }
       if (piece.type === "P") {
         if (rank !== pawnRank) score += 4;
-        if ((file === 3 || file === 4) && (rank === 3 || rank === 4)) score += 20;
-        if ((file === 2 || file === 5) && (rank === 2 || rank === 5)) score += 6;
-        if ((file === 5 || file === 6) && Math.abs(rank - pawnRank) > 0 && !state.history.some((m) => m.color === color && m.isCastle)) {
+        if (distanceFromCenter <= 1.25) score += 20;
+        else if (distanceFromCenter <= 2.5) score += 6;
+        if (file >= Math.max(0, width - 3) && Math.abs(rank - pawnRank) > 0 && !state.history.some((m) => m.color === color && m.isCastle)) {
           score -= 18;
         }
       }
@@ -86,12 +90,13 @@ function pieceDevelopmentBonus(state: GameState, color: Color): number {
 }
 
 function centerControlBonus(state: GameState, color: Color): number {
-  const centers = [
-    { file: 3, rank: 3 },
-    { file: 4, rank: 3 },
-    { file: 3, rank: 4 },
-    { file: 4, rank: 4 }
-  ];
+  const fileCenters = boardWidth(state) % 2 === 0
+    ? [boardWidth(state) / 2 - 1, boardWidth(state) / 2]
+    : [Math.floor(boardWidth(state) / 2)];
+  const rankCenters = boardHeight(state) % 2 === 0
+    ? [boardHeight(state) / 2 - 1, boardHeight(state) / 2]
+    : [Math.floor(boardHeight(state) / 2)];
+  const centers = rankCenters.flatMap((rank) => fileCenters.map((file) => ({ file, rank })));
   let score = 0;
   for (const square of centers) {
     const piece = state.board[square.rank][square.file];
@@ -112,8 +117,8 @@ function hangingPiecePenalty(state: GameState, color: Color): number {
   const enemy = opposite(color);
   let penalty = 0;
 
-  for (let rank = 0; rank < 8; rank++) {
-    for (let file = 0; file < 8; file++) {
+  for (let rank = 0; rank < boardHeight(state); rank++) {
+    for (let file = 0; file < boardWidth(state); file++) {
       const piece = state.board[rank][file];
       if (!piece || piece.color !== color || piece.type === "K") continue;
       const square = { file, rank };
@@ -202,7 +207,7 @@ export function evaluateMoveFeedback(state: GameState, move: Move): MoveFeedback
 }
 
 export async function evaluateMoveFeedbackWithEngine(state: GameState, move: Move): Promise<MoveFeedback> {
-  if (state.portals) return evaluateMoveFeedback(state, move);
+  if (state.portals || boardWidth(state) !== 8 || boardHeight(state) !== 8) return evaluateMoveFeedback(state, move);
 
   const analysis = await stockfishAnalyzePosition(state);
   const bestMove = stockfishMoveFromUci(state, analysis?.bestmoveUci ?? null);

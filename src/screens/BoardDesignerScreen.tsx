@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import type { CustomPieceDef, PieceType } from "../engine/board";
+import { FILES, type CustomPieceDef, type PieceType } from "../engine/board";
 import { useGame } from "../GameContext";
 import {
   deleteCustomGame,
@@ -16,6 +16,8 @@ const PIECE_LABEL: Record<string, string> = {
   K: "King", Q: "Queen", R: "Rook", B: "Bishop", N: "Knight", P: "Pawn", X1: "Custom",
 };
 const LEGACY_CUSTOM_ID = "legacy-x1";
+const MIN_BOARD_SIZE = 4;
+const MAX_BOARD_SIZE = 20;
 
 type SquareEntry = { rank: number; file: number; type: PieceType; customPieceId?: string };
 type CustomPieceOption = SavedCustomPiece & { aliasIds: string[] };
@@ -27,6 +29,8 @@ type BoardDesignerLocationState = {
   customPieces?: SavedCustomPiece[];
   gameName?: string;
   editingId?: string | null;
+  width?: number;
+  height?: number;
   returnPickerAt?: { rank: number; file: number };
 } | null;
 
@@ -40,6 +44,24 @@ const DEFAULT_SQUARES: SquareEntry[] = [
   { rank: 1, file: 4, type: "P" }, { rank: 1, file: 5, type: "P" },
   { rank: 1, file: 6, type: "P" }, { rank: 1, file: 7, type: "P" },
 ];
+
+function clampBoardSize(value: number): number {
+  return Math.max(MIN_BOARD_SIZE, Math.min(MAX_BOARD_SIZE, Math.round(value)));
+}
+
+function createDefaultSquares(width: number, height: number): SquareEntry[] {
+  if (width === 8 && height === 8) return DEFAULT_SQUARES.map((square) => ({ ...square }));
+  return [{ rank: 0, file: Math.floor(width / 2), type: "K" }];
+}
+
+function normalizeSquaresForBoard(squares: SquareEntry[], width: number, height: number): SquareEntry[] {
+  const editableRanks = Math.floor(height / 2);
+  const filtered = squares
+    .filter((square) => square.file >= 0 && square.file < width && square.rank >= 0 && square.rank < editableRanks)
+    .map((square) => ({ ...square }));
+  if (filtered.some((square) => square.type === "K")) return filtered;
+  return [...filtered, { rank: 0, file: Math.floor(width / 2), type: "K" }];
+}
 
 function validateLayout(squares: SquareEntry[]): string | null {
   const kings = squares.filter((square) => square.type === "K");
@@ -159,6 +181,8 @@ export function BoardDesignerScreen() {
   const pieceSet = store.settings.pieceSet;
   const theme = store.settings.theme;
   const locState = location.state as BoardDesignerLocationState;
+  const initialWidth = clampBoardSize(locState?.width ?? 8);
+  const initialHeight = clampBoardSize(locState?.height ?? 8);
 
   const returnedPiece: SavedCustomPiece | null = locState?.customPieceDef
     ? {
@@ -175,7 +199,7 @@ export function BoardDesignerScreen() {
   ]);
 
   const initialSquares = (): SquareEntry[] => {
-    const base = (locState?.boardSquares ?? DEFAULT_SQUARES).map((square) => ({ ...square }));
+    const base = normalizeSquaresForBoard(locState?.boardSquares ?? createDefaultSquares(initialWidth, initialHeight), initialWidth, initialHeight);
     const normalized = base.map((square) => (
       square.type === "X1" && !square.customPieceId && initialCustomPieces.length === 1
         ? { ...square, customPieceId: initialCustomPieces[0].id }
@@ -192,10 +216,16 @@ export function BoardDesignerScreen() {
   };
 
   const [squares, setSquares] = useState<SquareEntry[]>(initialSquares);
+  const [boardWidth, setBoardWidth] = useState<number>(initialWidth);
+  const [boardHeight, setBoardHeight] = useState<number>(initialHeight);
   const [gameName, setGameName] = useState(locState?.gameName ?? "My Custom Game");
   const [editingId, setEditingId] = useState<string | null>(locState?.editingId ?? null);
   const [boardCustomPieces, setBoardCustomPieces] = useState<SavedCustomPiece[]>(initialCustomPieces.map(({ aliasIds: _aliasIds, ...piece }) => piece));
   const [pickerAt, setPickerAt] = useState<{ rank: number; file: number } | null>(null);
+  const editableRanks = Math.floor(boardHeight / 2);
+  const displayRanks = Array.from({ length: boardHeight }, (_, index) => boardHeight - 1 - index);
+  const files = Array.from({ length: boardWidth }, (_, index) => index);
+  const designerCellSize = Math.max(22, Math.min(34, Math.floor(360 / Math.max(boardWidth, boardHeight))));
 
   const availableCustomPieces = useMemo(
     () => dedupePieces([...boardCustomPieces, ...store.settings.savedCustomPieces.map(clonePiece)]),
@@ -207,6 +237,18 @@ export function BoardDesignerScreen() {
 
   const customPieceOptionFor = (id?: string) => availableCustomPieces.find((piece) => piece.aliasIds.includes(id ?? ""));
   const customPieceFor = (id?: string) => customPieceOptionFor(id)?.def;
+
+  const resizeBoard = (nextWidth: number, nextHeight: number) => {
+    const width = clampBoardSize(nextWidth);
+    const height = clampBoardSize(nextHeight);
+    setBoardWidth(width);
+    setBoardHeight(height);
+    setSquares((current) => normalizeSquaresForBoard(current, width, height));
+    setPickerAt((current) => {
+      if (!current) return null;
+      return current.file < width && current.rank < Math.floor(height / 2) ? current : null;
+    });
+  };
 
   const handlePick = (choice: PickerChoice) => {
     if (!pickerAt) return;
@@ -241,6 +283,8 @@ export function BoardDesignerScreen() {
         customPieces: boardCustomPieces,
         gameName,
         editingId,
+        width: boardWidth,
+        height: boardHeight,
         returnPickerAt: savedPickerAt,
       },
     });
@@ -260,6 +304,8 @@ export function BoardDesignerScreen() {
     const game: SavedCustomGame = {
       id: editingId ?? crypto.randomUUID(),
       name: gameName.trim() || "My Custom Game",
+      width: boardWidth,
+      height: boardHeight,
       squares: squares.map((square) => ({
         ...square,
         customPieceId: square.type === "X1" ? (customPieceOptionFor(square.customPieceId)?.id ?? square.customPieceId) : square.customPieceId,
@@ -290,6 +336,8 @@ export function BoardDesignerScreen() {
     const game: SavedCustomGame = {
       id: crypto.randomUUID(),
       name: gameName.trim() || "Custom",
+      width: boardWidth,
+      height: boardHeight,
       squares: squares.map((square) => ({
         ...square,
         customPieceId: square.type === "X1" ? (customPieceOptionFor(square.customPieceId)?.id ?? square.customPieceId) : square.customPieceId,
@@ -306,12 +354,16 @@ export function BoardDesignerScreen() {
       ...(game.customPieces?.map(clonePiece) ?? []),
       ...legacyPieceFromDef(!game.customPieces?.length ? game.customPieceDef : undefined),
     ]);
-    setSquares(game.squares.map((square) => ({
+    const width = clampBoardSize(game.width ?? 8);
+    const height = clampBoardSize(game.height ?? 8);
+    setBoardWidth(width);
+    setBoardHeight(height);
+    setSquares(normalizeSquaresForBoard(game.squares.map((square) => ({
       ...square,
       customPieceId: square.type === "X1" && !square.customPieceId && loadedCustomPieces.length === 1
         ? loadedCustomPieces[0].id
         : square.customPieceId,
-    })));
+    })), width, height));
     setBoardCustomPieces(loadedCustomPieces.map(({ aliasIds: _aliasIds, ...piece }) => piece));
     setGameName(game.name);
     setEditingId(game.id);
@@ -337,8 +389,8 @@ export function BoardDesignerScreen() {
     }
   };
 
-  const handleResetBoard = () => setSquares(DEFAULT_SQUARES.map((square) => ({ ...square })));
-  const handleClearBoard = () => setSquares([{ rank: 0, file: 4, type: "K" }]);
+  const handleResetBoard = () => setSquares(createDefaultSquares(boardWidth, boardHeight));
+  const handleClearBoard = () => setSquares([{ rank: 0, file: Math.floor(boardWidth / 2), type: "K" }]);
 
   const error = validateLayout(squares);
   const hasMissingCustomPiece = squares.some((square) => square.type === "X1" && !customPieceFor(square.customPieceId));
@@ -379,45 +431,84 @@ export function BoardDesignerScreen() {
           Click any square to change its piece. Edit white&#8217;s side (bottom 4 rows) &#8212; black mirrors automatically.
         </p>
 
-        <div className={`board-designer-grid board-theme-${theme}`} style={{ position: "relative" }}>
-          {[7, 6, 5, 4].map((rank) => (
+        <div className="board-size-row">
+          <label>
+            Width
+            <input
+              className="text-input"
+              type="number"
+              min={MIN_BOARD_SIZE}
+              max={MAX_BOARD_SIZE}
+              value={boardWidth}
+              onChange={(e) => resizeBoard(Number(e.target.value || 8), boardHeight)}
+            />
+          </label>
+          <label>
+            Height
+            <input
+              className="text-input"
+              type="number"
+              min={MIN_BOARD_SIZE}
+              max={MAX_BOARD_SIZE}
+              value={boardHeight}
+              onChange={(e) => resizeBoard(boardWidth, Number(e.target.value || 8))}
+            />
+          </label>
+        </div>
+        <p className="hint">Custom boards can now be sized from 4x4 up to 20x20. Odd heights leave a neutral middle rank empty.</p>
+
+        <div
+          className={`board-designer-grid board-theme-${theme}`}
+          style={{
+            position: "relative",
+            aspectRatio: `${boardWidth} / ${boardHeight}`,
+            ["--designer-cell-size" as string]: `${designerCellSize}px`
+          }}
+        >
+          {displayRanks.map((rank) => (
             <div key={rank} className="board-row">
-              {[0, 1, 2, 3, 4, 5, 6, 7].map((file) => {
-                const entry = getAt(7 - rank, file);
+              {files.map((file) => {
                 const isLight = (rank + file) % 2 === 1;
-                return (
-                  <div
-                    key={file}
-                    className={`square ${isLight ? "light" : "dark"} board-designer-mirror`}
-                    aria-hidden="true"
-                  >
-                    {entry && (
-                      <span className="piece-wrap" style={{ opacity: 0.4 }}>
-                        <Piece
-                          color="b"
-                          type={entry.type}
-                          set={pieceSet}
-                          customPieceDef={entry.type === "X1" ? customPieceFor(entry.customPieceId) : undefined}
-                        />
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-          {[3, 2, 1, 0].map((rank) => (
-            <div key={rank} className="board-row">
-              {[0, 1, 2, 3, 4, 5, 6, 7].map((file) => {
-                const entry = getAt(rank, file);
-                const isLight = (rank + file) % 2 === 1;
+                const mirroredRank = boardHeight - 1 - rank;
+                const isMirrorRow = rank >= boardHeight - editableRanks;
+                const isEditableRow = rank < editableRanks;
+                const entry = isMirrorRow ? getAt(mirroredRank, file) : isEditableRow ? getAt(rank, file) : undefined;
+                if (!isMirrorRow && !isEditableRow) {
+                  return (
+                    <div
+                      key={file}
+                      className={`square ${isLight ? "light" : "dark"} board-designer-mirror`}
+                      aria-hidden="true"
+                    />
+                  );
+                }
+                if (isMirrorRow) {
+                  return (
+                    <div
+                      key={file}
+                      className={`square ${isLight ? "light" : "dark"} board-designer-mirror`}
+                      aria-hidden="true"
+                    >
+                      {entry && (
+                        <span className="piece-wrap" style={{ opacity: 0.4 }}>
+                          <Piece
+                            color="b"
+                            type={entry.type}
+                            set={pieceSet}
+                            customPieceDef={entry.type === "X1" ? customPieceFor(entry.customPieceId) : undefined}
+                          />
+                        </span>
+                      )}
+                    </div>
+                  );
+                }
                 const isActive = pickerAt?.rank === rank && pickerAt?.file === file;
                 return (
                   <button
                     key={file}
                     className={`square ${isLight ? "light" : "dark"} board-designer-square${isActive ? " picker-active" : ""}`}
                     onClick={() => setPickerAt({ rank, file })}
-                    aria-label={`${String.fromCharCode(97 + file)}${rank + 1}`}
+                    aria-label={`${FILES[file] ?? file}${rank + 1}`}
                   >
                     {entry && (
                       <span className="piece-wrap">
