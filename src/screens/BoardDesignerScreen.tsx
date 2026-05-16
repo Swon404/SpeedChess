@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FILES, type CustomPieceDef, type PieceType } from "../engine/board";
 import { useGame } from "../GameContext";
@@ -222,6 +222,8 @@ export function BoardDesignerScreen() {
   const [editingId, setEditingId] = useState<string | null>(locState?.editingId ?? null);
   const [boardCustomPieces, setBoardCustomPieces] = useState<SavedCustomPiece[]>(initialCustomPieces.map(({ aliasIds: _aliasIds, ...piece }) => piece));
   const [pickerAt, setPickerAt] = useState<{ rank: number; file: number } | null>(null);
+  const [activeBrush, setActiveBrush] = useState<PickerChoice | null>(null);
+  const isPaintingRef = useRef(false);
   const editableRanks = Math.floor(boardHeight / 2);
   const displayRanks = Array.from({ length: boardHeight }, (_, index) => boardHeight - 1 - index);
   const files = Array.from({ length: boardWidth }, (_, index) => index);
@@ -250,9 +252,7 @@ export function BoardDesignerScreen() {
     });
   };
 
-  const handlePick = (choice: PickerChoice) => {
-    if (!pickerAt) return;
-    const { rank, file } = pickerAt;
+  const applyBrush = (rank: number, file: number, choice: PickerChoice) => {
     if (choice.kind === "empty") {
       setSquares((current) => current.filter((square) => !(square.rank === rank && square.file === file)));
     } else if (choice.kind === "std") {
@@ -270,6 +270,12 @@ export function BoardDesignerScreen() {
         { rank, file, type: "X1", customPieceId: choice.piece.id },
       ]);
     }
+  };
+
+  const handlePick = (choice: PickerChoice) => {
+    if (!pickerAt) return;
+    applyBrush(pickerAt.rank, pickerAt.file, choice);
+    setActiveBrush(choice);
     setPickerAt(null);
   };
 
@@ -434,25 +440,27 @@ export function BoardDesignerScreen() {
         <div className="board-size-row">
           <label>
             Width
-            <input
+            <select
               className="text-input"
-              type="number"
-              min={MIN_BOARD_SIZE}
-              max={MAX_BOARD_SIZE}
               value={boardWidth}
-              onChange={(e) => resizeBoard(Number(e.target.value || 8), boardHeight)}
-            />
+              onChange={(e) => resizeBoard(Number(e.target.value), boardHeight)}
+            >
+              {Array.from({ length: MAX_BOARD_SIZE - MIN_BOARD_SIZE + 1 }, (_, i) => i + MIN_BOARD_SIZE).map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
           </label>
           <label>
             Height
-            <input
+            <select
               className="text-input"
-              type="number"
-              min={MIN_BOARD_SIZE}
-              max={MAX_BOARD_SIZE}
               value={boardHeight}
-              onChange={(e) => resizeBoard(boardWidth, Number(e.target.value || 8))}
-            />
+              onChange={(e) => resizeBoard(boardWidth, Number(e.target.value))}
+            >
+              {Array.from({ length: MAX_BOARD_SIZE - MIN_BOARD_SIZE + 1 }, (_, i) => i + MIN_BOARD_SIZE).map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
           </label>
         </div>
         <p className="hint">Custom boards can now be sized from 4x4 up to 20x20. Odd heights leave a neutral middle rank empty.</p>
@@ -462,8 +470,23 @@ export function BoardDesignerScreen() {
           style={{
             position: "relative",
             aspectRatio: `${boardWidth} / ${boardHeight}`,
-            ["--designer-cell-size" as string]: `${designerCellSize}px`
+            ["--designer-cell-size" as string]: `${designerCellSize}px`,
+            touchAction: activeBrush ? "none" : undefined,
           }}
+          onPointerDown={() => { if (activeBrush) isPaintingRef.current = true; }}
+          onPointerMove={(e) => {
+            if (!isPaintingRef.current || !activeBrush) return;
+            const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
+            const cell = el?.closest("[data-designer-rank]") as HTMLElement | null;
+            if (!cell) return;
+            const r = Number(cell.dataset.designerRank);
+            const f = Number(cell.dataset.designerFile);
+            if (!Number.isNaN(r) && !Number.isNaN(f) && r < editableRanks) {
+              applyBrush(r, f, activeBrush);
+            }
+          }}
+          onPointerUp={() => { isPaintingRef.current = false; }}
+          onPointerCancel={() => { isPaintingRef.current = false; }}
         >
           {displayRanks.map((rank) => (
             <div key={rank} className="board-row">
@@ -506,8 +529,16 @@ export function BoardDesignerScreen() {
                 return (
                   <button
                     key={file}
-                    className={`square ${isLight ? "light" : "dark"} board-designer-square${isActive ? " picker-active" : ""}`}
-                    onClick={() => setPickerAt({ rank, file })}
+                    className={`square ${isLight ? "light" : "dark"} board-designer-square${isActive ? " picker-active" : ""}${activeBrush ? " has-brush" : ""}`}
+                    data-designer-rank={rank}
+                    data-designer-file={file}
+                    onClick={() => {
+                      if (activeBrush) {
+                        applyBrush(rank, file, activeBrush);
+                      } else {
+                        setPickerAt({ rank, file });
+                      }
+                    }}
                     aria-label={`${FILES[file] ?? file}${rank + 1}`}
                   >
                     {entry && (
@@ -527,6 +558,30 @@ export function BoardDesignerScreen() {
           ))}
         </div>
 
+        {activeBrush && (
+          <div className="board-designer-brush-bar">
+            <span className="brush-preview-icon">
+              {activeBrush.kind === "empty" ? (
+                <span style={{ fontSize: 18 }}>✕</span>
+              ) : activeBrush.kind === "std" ? (
+                <Piece color="w" type={activeBrush.type} set={pieceSet} />
+              ) : (
+                <Piece color="w" type="X1" set={pieceSet} customPieceDef={activeBrush.piece.def} />
+              )}
+            </span>
+            <span className="brush-label">
+              Painting:{" "}
+              {activeBrush.kind === "empty"
+                ? "Eraser"
+                : activeBrush.kind === "std"
+                ? PIECE_LABEL[activeBrush.type]
+                : activeBrush.piece.name}
+            </span>
+            <button className="pill" style={{ marginLeft: "auto", fontSize: "0.8rem" }} onClick={() => setActiveBrush(null)}>
+              ✕ Clear
+            </button>
+          </div>
+        )}
         {hasMissingCustomPiece && (
           <p className="hint" style={{ color: "var(--accent-red,#f55)", marginTop: 6 }}>
             One or more custom pieces on the board no longer have a definition. Delete them or recreate the missing piece.
