@@ -19,9 +19,13 @@ function materialScore(state: GameState, color: "w" | "b"): number {
     const v = p.type === "X1" ? customPieceValueForDef(state, p) : (VALUES[p.type] ?? 0);
     s += (p.color === color ? 1 : -1) * v;
   }
-  // Slight mobility bonus
-  const moves = allLegalMoves(state).length;
-  s += (state.turn === color ? moves : -moves) * 2;
+  // Mobility bonus: reward having more legal moves than the opponent.
+  // Only compute this at the leaf level; skip for large boards to keep it fast.
+  const boardArea = boardWidth(state) * boardHeight(state);
+  if (boardArea <= 100) {
+    const moves = allLegalMoves(state).length;
+    s += (state.turn === color ? moves : -moves) * 2;
+  }
   return s;
 }
 
@@ -115,7 +119,9 @@ export async function chooseBotMove(state: GameState, level: number, opts?: BotO
   // Level 6+: deterministic minimax fallback if external engine is unavailable.
   const blunderChanceByLevel: Record<number, number> = { 1: 0.8, 2: 0.5, 3: 0.15, 4: 0.03 };
   const blunderChance = blunderChanceByLevel[normalizedLevel] ?? 0;
-  const depth = normalizedLevel <= 2 ? 1 : normalizedLevel <= 4 ? 2 : normalizedLevel <= 8 ? 3 : 4;
+  const boardArea = boardWidth(state) * boardHeight(state);
+  const depthCap = boardArea > 200 ? 1 : boardArea > 100 ? 2 : 4;
+  const depth = Math.min(depthCap, normalizedLevel <= 2 ? 1 : normalizedLevel <= 4 ? 2 : normalizedLevel <= 8 ? 3 : 4);
 
   if (rng() < blunderChance) {
     const captures = moves.filter((m) => m.captured);

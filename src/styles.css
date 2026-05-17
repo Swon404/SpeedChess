@@ -182,7 +182,6 @@ section label { display: block; margin: 6px 0; }
   flex-direction: column;
   width: 100%;
   max-width: 560px;
-  aspect-ratio: 1 / 1;
   margin: 12px auto;
   border: 2px solid #111;
   border-radius: 8px;
@@ -190,6 +189,17 @@ section label { display: block; margin: 6px 0; }
   user-select: none;
 }
 .board-row { display: flex; flex: 1; }
+/* On mobile, force a minimum 40px cell so large boards scroll rather than squish */
+@media (max-width: 640px) {
+  .board {
+    min-width: calc(var(--file-count, 8) * 40px);
+    min-height: calc(var(--rank-count, 8) * 40px);
+    width: calc(var(--file-count, 8) * 40px);
+    max-width: none;
+  }
+  .board-row { flex: none; height: 40px; }
+  .square { flex: none; width: 40px; height: 40px; }
+}
 .square {
   flex: 1;
   position: relative;
@@ -1159,7 +1169,11 @@ section label { display: block; margin: 6px 0; }
 .puzzle-controls { margin: 10px 0; justify-content: space-between; }
 .topbar .muted { color: #94a3b8; font-size: 0.9rem; }
 
-.board-wrap { position: relative; }
+.board-wrap {
+  position: relative;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
 .pause-overlay {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;

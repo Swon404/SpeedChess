@@ -95,7 +95,9 @@ export function Board({ flipped = false }: Props) {
     mode.kind === "two-player" &&
     !store.settings.autoFlip &&
     store.settings.rotateBlackPiecesFixedBoard;
+  const showThreats = store.settings.showThreats;
   const legalCaptureTargets = useMemo(() => {
+    if (!showThreats) return { w: new Set<string>(), b: new Set<string>() };
     const whiteTargets = new Set(
       allLegalMoves({ ...state, turn: "w" })
         .filter((move) => Boolean(move.captured))
@@ -107,7 +109,7 @@ export function Board({ flipped = false }: Props) {
         .map((move) => squareKey(move.to))
     );
     return { w: whiteTargets, b: blackTargets };
-  }, [state]);
+  }, [state, showThreats]);
 
   useLayoutEffect(() => {
     const current = state.history[state.history.length - 1];
@@ -157,7 +159,9 @@ export function Board({ flipped = false }: Props) {
         className={`board board-theme-${theme} piece-set-${pieceSet} anim-speed-${animationSpeed}`}
         style={{
           aspectRatio: `${fileCount} / ${rankCount}`,
-          ["--square-font-size" as string]: `${squareFontSize}px`
+          ["--square-font-size" as string]: `${squareFontSize}px`,
+          ["--file-count" as string]: fileCount,
+          ["--rank-count" as string]: rankCount,
         }}
       >
         {ranks.map((r) => (
