@@ -19,8 +19,7 @@ function materialScore(state: GameState, color: "w" | "b"): number {
     const v = p.type === "X1" ? customPieceValueForDef(state, p) : (VALUES[p.type] ?? 0);
     s += (p.color === color ? 1 : -1) * v;
   }
-  // Mobility bonus: reward having more legal moves than the opponent.
-  // Only compute this at the leaf level; skip for large boards to keep it fast.
+  // Mobility bonus: only for small boards where the extra allLegalMoves call is affordable
   const boardArea = boardWidth(state) * boardHeight(state);
   if (boardArea <= 100) {
     const moves = allLegalMoves(state).length;

@@ -155,6 +155,29 @@ function evaluatePosition(state: GameState, color: Color): number {
   return score;
 }
 
+/**
+ * Cheap position score for large boards: no allLegalMoves calls.
+ * Computes material directly (avoiding materialScore's mobility allLegalMoves),
+ * skips gameResult check and reply lookahead.
+ */
+function fastEvaluatePosition(state: GameState, color: Color): number {
+  // Material count without mobility bonus (avoids allLegalMoves)
+  let score = 0;
+  for (const row of state.board) for (const piece of row) {
+    if (!piece) continue;
+    const v = PIECE_DANGER_VALUES[piece.type] ?? 150;
+    score += (piece.color === color ? 1 : -1) * v;
+  }
+  score += pieceDevelopmentBonus(state, color);
+  score += centerControlBonus(state, color);
+  score -= hangingPiecePenalty(state, color);
+  if (inCheck(state, opposite(color))) score += 40;
+  if (inCheck(state, color)) score -= 55;
+  const lastMove = state.history[state.history.length - 1];
+  if (lastMove?.promotion) score += 120;
+  return score;
+}
+
 function gradeFromLoss(loss: number): MoveGrade {
   if (loss <= 2) return 5;
   if (loss <= 6) return 4;
@@ -285,6 +308,12 @@ function exchangeCredit(state: GameState, move: Move): number {
 }
 
 function evaluateMoveLine(next: GameState, color: Color): number {
+  // Fast path for non-standard boards: skip gameResult (allLegalMoves) and
+  // reply lookahead — both are O(moves) which explodes on large boards.
+  if (boardWidth(next) * boardHeight(next) > 64) {
+    return fastEvaluatePosition(next, color);
+  }
+
   const immediate = evaluatePosition(next, color);
   const result = gameResult(next);
   if (result.kind !== "ongoing") return immediate;
